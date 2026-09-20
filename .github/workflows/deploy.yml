@@ -1,0 +1,54 @@
+name: Deploy to cPanel
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-cpanel
+  cancel-in-progress: false
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+      - name: Check PHP syntax
+        run: find . -name '*.php' -not -path './.git/*' -print0 | xargs -0 -n1 php -l
+      - name: Check widget syntax
+        run: node --check assets/widget.js
+
+  deploy:
+    name: Upload over FTPS
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          # Where the app lives on the server, e.g. public_html/chatbot/
+          server-dir: ${{ vars.FTP_SERVER_DIR || 'public_html/chatbot/' }}
+          # Set to true for a first run to see what would change without uploading.
+          dry-run: ${{ vars.FTP_DRY_RUN == 'true' }}
+          # Never overwrite live credentials, logs or the installer.
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            app/config.php
+            storage/logs/**
+            install.php
+            README.md
+            DEPLOYMENT.md

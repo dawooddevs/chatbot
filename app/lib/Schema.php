@@ -10,6 +10,26 @@ use PDO;
  */
 final class Schema
 {
+    /** Bump whenever statements() changes, so deployed updates migrate themselves. */
+    public const VERSION = 1;
+
+    /**
+     * Runs the migrations once per schema version. Called on admin requests so a
+     * code deployment never needs the installer to be re-run.
+     */
+    public static function ensureCurrent(): void
+    {
+        try {
+            if ((int)Settings::get('schema_version', '0') === self::VERSION) {
+                return;
+            }
+            self::migrate();
+            Settings::put('schema_version', (string)self::VERSION);
+        } catch (\Throwable $e) {
+            error_log('[chatbot] schema upgrade failed: ' . $e->getMessage());
+        }
+    }
+
     public static function migrate(?PDO $pdo = null): void
     {
         $pdo = $pdo ?? Database::pdo();

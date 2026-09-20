@@ -87,6 +87,54 @@ Paste it before `</head>` (or `</body>`) on every page of the client's site.
 Design and knowledge changes take effect without touching the client site again; the
 embed script is cached for 5 minutes.
 
+## Automatic deployment from GitHub
+
+Rather than re-uploading files by hand after every change, let GitHub push them for
+you. The credentials live in GitHub's encrypted secrets — nobody needs to hand the
+cPanel password to anyone, and access can be revoked in one click.
+
+### Option A — FTPS from GitHub Actions (works on every cPanel plan)
+
+`.github/workflows/deploy.yml` is already in this repository. It lints the code, then
+uploads it over FTPS on every push to `main`.
+
+1. cPanel → **FTP Accounts** → create an account **scoped to the app folder**, e.g.
+   directory `public_html/chatbot`. Do not use your main cPanel login.
+2. GitHub → repository → **Settings → Secrets and variables → Actions → Secrets**,
+   add:
+   - `FTP_SERVER` — e.g. `ftp.yourdomain.com` (as shown in cPanel's FTP settings)
+   - `FTP_USERNAME` — the full FTP user, usually `user@yourdomain.com`
+   - `FTP_PASSWORD` — that account's password
+3. On the **Variables** tab (same page), optionally add:
+   - `FTP_SERVER_DIR` — target folder, default `public_html/chatbot/`. It is relative
+     to wherever the FTP account lands, so a scoped account usually needs `./`.
+   - `FTP_DRY_RUN` — set to `true` for the first run: the log lists what *would* be
+     uploaded without touching the server. Delete it afterwards.
+4. Push to `main` (or run the workflow manually from the **Actions** tab).
+
+The workflow never uploads `app/config.php`, `storage/logs/`, `install.php` or the
+docs, so your live credentials, logs and the deleted installer stay as they are.
+
+### Option B — cPanel's own Git Version Control
+
+If your plan has **Git™ Version Control** (and SSH for the initial clone):
+
+1. Edit `.cpanel.yml` in this repository: replace `CPANEL_USER` and the folder with
+   your real path, then commit.
+2. cPanel → **Git™ Version Control** → **Create** → clone this repository.
+3. After each push, open that screen and press **Update from Remote** → **Deploy HEAD
+   Commit**. The tasks in `.cpanel.yml` copy the files into place.
+
+### Database changes
+
+You never need to re-run the installer after an update. The app carries a schema
+version and runs any new migrations itself on the first admin page load after a
+deployment.
+
+### Rolling back
+
+`git revert` the bad commit and push — the same pipeline redeploys the previous state.
+
 ## Maintenance
 
 - **Conversations** stores every transcript; delete individual chats there.

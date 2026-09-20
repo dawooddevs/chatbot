@@ -9,6 +9,7 @@ require __DIR__ . '/app/bootstrap.php';
 
 use App\Auth;
 use App\Csrf;
+use App\Schema;
 use App\Session;
 use App\View;
 
@@ -47,6 +48,11 @@ $user = in_array($route, ['login'], true) ? Auth::user() : Auth::requireLogin();
 if ($user && (int)$user['must_change_password'] === 1 && !in_array($route, ['profile', 'logout'], true)) {
     Session::flash('warning', 'Please choose your own password before continuing.');
     redirect(admin_url('profile'));
+}
+
+// Picks up schema changes shipped by a deployment.
+if ($user) {
+    Schema::ensureCurrent();
 }
 
 View::share('currentUser', $user);

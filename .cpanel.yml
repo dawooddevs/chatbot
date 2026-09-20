@@ -1,0 +1,12 @@
+---
+# Used by cPanel -> Git(TM) Version Control ("Deploy HEAD Commit").
+# Change CPANEL_USER and the target folder to match your account, then commit.
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/CPANEL_USER/public_html/chatbot
+    - /bin/mkdir -p $DEPLOYPATH/api $DEPLOYPATH/app $DEPLOYPATH/assets $DEPLOYPATH/storage/logs
+    - /bin/cp -f index.php embed.php .htaccess $DEPLOYPATH/
+    - /bin/cp -Rf api/. $DEPLOYPATH/api/
+    - /bin/cp -Rf assets/. $DEPLOYPATH/assets/
+    # app/config.php is never in git, so this cannot overwrite your live settings.
+    - /bin/cp -Rf app/. $DEPLOYPATH/app/

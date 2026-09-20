@@ -107,6 +107,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$alreadyInstalled) {
                 }
             }
 
+            Settings::put('schema_version', (string)Schema::VERSION);
+
             if (Settings::get('platform_name') === null) {
                 Settings::put('platform_name', 'Chatbot Platform');
                 Settings::put('default_chat_model', 'gpt-4o-mini');
