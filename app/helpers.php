@@ -6,6 +6,35 @@ function e(?string $value): string
     return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
+/**
+ * Absolute path to install.php before any configuration exists.
+ * It is worked out from the document root so it stays correct whether the app
+ * sits on a domain root or in a sub-folder, and it always starts with a single
+ * slash - a doubled one would be read by browsers as a protocol-relative host.
+ */
+function install_url(): string
+{
+    $base = '';
+    $documentRoot = isset($_SERVER['DOCUMENT_ROOT']) ? realpath((string)$_SERVER['DOCUMENT_ROOT']) : false;
+    $appRoot = realpath(APP_ROOT);
+
+    if ($documentRoot !== false && $appRoot !== false && str_starts_with($appRoot, $documentRoot)) {
+        $base = substr($appRoot, strlen($documentRoot));
+    } else {
+        $base = dirname((string)($_SERVER['SCRIPT_NAME'] ?? '/'));
+        if (basename($base) === 'api') {
+            $base = dirname($base);
+        }
+    }
+
+    $base = rtrim(str_replace('\\', '/', $base), '/');
+    if ($base !== '' && $base[0] !== '/') {
+        $base = '/' . $base;
+    }
+
+    return $base . '/install.php';
+}
+
 function base_url(string $path = ''): string
 {
     $base = rtrim((string)App\Config::get('base_url', ''), '/');

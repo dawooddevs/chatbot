@@ -18,7 +18,7 @@ require APP_DIR . '/helpers.php';
 
 if (!is_file(APP_DIR . '/config.php')) {
     if (PHP_SAPI !== 'cli' && !defined('INSTALLER')) {
-        header('Location: ' . dirname($_SERVER['SCRIPT_NAME'] ?? '/') . '/install.php');
+        header('Location: ' . install_url());
         exit;
     }
     $config = null;
