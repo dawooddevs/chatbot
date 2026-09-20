@@ -1,19 +1,24 @@
 # Deploying on Spaceship / cPanel shared hosting
 
 Everything here is plain PHP and MySQL — no SSH, Composer or Node needed.
+These steps use `chatbot.dawood.top`, whose document root is the folder
+`chatbot.dawood.top` in your cPanel home directory.
 
 ## 1. Upload the files
 
-1. cPanel → **File Manager** → `public_html`.
-2. Create a folder, e.g. `chatbot` (or upload into `public_html` itself if the panel
-   should live on the domain root).
-3. Upload this repository as a ZIP and use **Extract**. You should end up with
-   `public_html/chatbot/index.php`, `install.php`, `embed.php`, `api/`, `app/`,
-   `assets/`, `storage/`.
+1. cPanel → **File Manager** → open the `chatbot.dawood.top` folder (it is the
+   subdomain's document root, so the app's `index.php` belongs directly inside it,
+   not in a sub-folder).
+2. **Upload** the ZIP of this repository, then select it and press **Extract**.
+3. Delete the ZIP afterwards. The folder should now contain `index.php`,
+   `install.php`, `embed.php`, `.htaccess`, `api/`, `app/`, `assets/`, `storage/`.
 
-Permissions: folders `755`, files `644`. The installer needs to write
-`app/config.php`, so `app/` must be writable (`755` is enough when PHP runs as your
-cPanel user, which is the norm on cPanel).
+If the archive extracts into a nested folder (e.g. `chatbot-main/`), open it, select
+everything and **Move** it one level up so `index.php` sits in the document root.
+
+Permissions: folders `755`, files `644`. The installer writes `app/config.php`, so
+`app/` must be writable — `755` is enough when PHP runs as your cPanel user, which is
+the norm on cPanel.
 
 ## 2. Create the database
 
@@ -27,7 +32,7 @@ Note the full names — cPanel prefixes both with your account name.
 
 ## 3. Run the installer
 
-Open `https://yourdomain.com/chatbot/install.php`.
+Open `https://chatbot.dawood.top/install.php`.
 
 - The page first checks PHP version, `pdo_mysql`, `mbstring`, outbound HTTPS and
   folder permissions.
@@ -38,7 +43,7 @@ Open `https://yourdomain.com/chatbot/install.php`.
 When it finishes:
 
 1. **Delete `install.php` from the server.**
-2. Sign in at `https://yourdomain.com/chatbot/`.
+2. Sign in at `https://chatbot.dawood.top/`.
 3. Change the password when prompted (the panel stays locked until you do).
 
 ## 4. Add your OpenAI key
@@ -73,7 +78,7 @@ precedence over the stored one.
 **Embed code** tab → copy the snippet:
 
 ```html
-<script src="https://yourdomain.com/chatbot/embed.php?k=cb_xxxxxxxxxxxx" async></script>
+<script src="https://chatbot.dawood.top/embed.php?k=cb_xxxxxxxxxxxx" async></script>
 ```
 
 Paste it before `</head>` (or `</body>`) on every page of the client's site.
@@ -99,15 +104,17 @@ cPanel password to anyone, and access can be revoked in one click.
 uploads it over FTPS on every push to `main`.
 
 1. cPanel → **FTP Accounts** → create an account **scoped to the app folder**, e.g.
-   directory `public_html/chatbot`. Do not use your main cPanel login.
+   directory `chatbot.dawood.top`. Do not use your main cPanel login.
 2. GitHub → repository → **Settings → Secrets and variables → Actions → Secrets**,
    add:
-   - `FTP_SERVER` — e.g. `ftp.yourdomain.com` (as shown in cPanel's FTP settings)
-   - `FTP_USERNAME` — the full FTP user, usually `user@yourdomain.com`
+   - `FTP_SERVER` — `chatbot.dawood.top` (or the server hostname cPanel shows under
+     FTP Accounts → Configure FTP Client, e.g. `server44.shared.spaceship.host`)
+   - `FTP_USERNAME` — the full FTP user, e.g. `deploy@chatbot.dawood.top`
    - `FTP_PASSWORD` — that account's password
 3. On the **Variables** tab (same page), optionally add:
-   - `FTP_SERVER_DIR` — target folder, default `public_html/chatbot/`. It is relative
-     to wherever the FTP account lands, so a scoped account usually needs `./`.
+   - `FTP_SERVER_DIR` — target folder, default `chatbot.dawood.top/`. It is relative
+     to wherever the FTP account lands, so an account scoped to that folder needs
+     `./` instead.
    - `FTP_DRY_RUN` — set to `true` for the first run: the log lists what *would* be
      uploaded without touching the server. Delete it afterwards.
 4. Push to `main` (or run the workflow manually from the **Actions** tab).
@@ -119,8 +126,7 @@ docs, so your live credentials, logs and the deleted installer stay as they are.
 
 If your plan has **Git™ Version Control** (and SSH for the initial clone):
 
-1. Edit `.cpanel.yml` in this repository: replace `CPANEL_USER` and the folder with
-   your real path, then commit.
+1. `.cpanel.yml` in this repository already targets `$HOME/chatbot.dawood.top`.
 2. cPanel → **Git™ Version Control** → **Create** → clone this repository.
 3. After each push, open that screen and press **Update from Remote** → **Deploy HEAD
    Commit**. The tasks in `.cpanel.yml` copy the files into place.
@@ -151,5 +157,6 @@ deployment.
 | Bot always replies with the fallback message | No OpenAI key, no matching knowledge, or the key has no credits. Check **Settings → Test connection** and **Test retrieval**. |
 | "This chatbot is not enabled for this domain" | Add the domain under the website's **General** tab. |
 | Documents stuck on "keyword only" | The embedding call failed (usually a missing key or blocked outbound HTTPS). Fix it, then **Re-index all**. |
-| 500 error after moving the install | `base_url` in `app/config.php` still points at the old address — edit that file or delete it and re-run the installer. |
+| Links or the embed code point at the wrong address | `base_url` in `app/config.php` is stale — edit that one line, or delete the file and re-run the installer. |
+| Subdomain shows a cPanel default page | The files landed in a sub-folder; `index.php` must sit directly in `chatbot.dawood.top/`. |
 | Visitors hit "message limit" too soon | Raise *Messages per visitor per hour* under **AI & answers**. |

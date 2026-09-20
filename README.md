@@ -48,7 +48,7 @@ Admin panel  →  add website  →  add knowledge  →  copy embed code  →  cl
 
 See **[DEPLOYMENT.md](DEPLOYMENT.md)** for the step-by-step cPanel walkthrough.
 Short version: upload the files, create a MySQL database in cPanel, open
-`https://yourdomain.com/chatbot/install.php`, fill in the form, delete `install.php`.
+`https://chatbot.dawood.top/install.php`, fill in the form, delete `install.php`.
 
 ## Layout
 

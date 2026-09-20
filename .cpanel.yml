@@ -1,9 +1,10 @@
 ---
 # Used by cPanel -> Git(TM) Version Control ("Deploy HEAD Commit").
-# Change CPANEL_USER and the target folder to match your account, then commit.
+# $HOME is the cPanel account home, so nothing account-specific is hard-coded.
+# chatbot.dawood.top is the subdomain's document root.
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/CPANEL_USER/public_html/chatbot
+    - export DEPLOYPATH=$HOME/chatbot.dawood.top
     - /bin/mkdir -p $DEPLOYPATH/api $DEPLOYPATH/app $DEPLOYPATH/assets $DEPLOYPATH/storage/logs
     - /bin/cp -f index.php embed.php .htaccess $DEPLOYPATH/
     - /bin/cp -Rf api/. $DEPLOYPATH/api/
