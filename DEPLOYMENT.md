@@ -1,0 +1,107 @@
+# Deploying on Spaceship / cPanel shared hosting
+
+Everything here is plain PHP and MySQL — no SSH, Composer or Node needed.
+
+## 1. Upload the files
+
+1. cPanel → **File Manager** → `public_html`.
+2. Create a folder, e.g. `chatbot` (or upload into `public_html` itself if the panel
+   should live on the domain root).
+3. Upload this repository as a ZIP and use **Extract**. You should end up with
+   `public_html/chatbot/index.php`, `install.php`, `embed.php`, `api/`, `app/`,
+   `assets/`, `storage/`.
+
+Permissions: folders `755`, files `644`. The installer needs to write
+`app/config.php`, so `app/` must be writable (`755` is enough when PHP runs as your
+cPanel user, which is the norm on cPanel).
+
+## 2. Create the database
+
+cPanel → **MySQL® Databases**:
+
+1. Create a database, e.g. `cpaneluser_chatbot`.
+2. Create a user with a strong password.
+3. **Add the user to the database** with *ALL PRIVILEGES*.
+
+Note the full names — cPanel prefixes both with your account name.
+
+## 3. Run the installer
+
+Open `https://yourdomain.com/chatbot/install.php`.
+
+- The page first checks PHP version, `pdo_mysql`, `mbstring`, outbound HTTPS and
+  folder permissions.
+- Fill in the database details, confirm the public URL (it must be the address your
+  clients can reach — it is baked into the embed code), and set the admin account.
+- Optionally paste your OpenAI API key; you can also add it later under **Settings**.
+
+When it finishes:
+
+1. **Delete `install.php` from the server.**
+2. Sign in at `https://yourdomain.com/chatbot/`.
+3. Change the password when prompted (the panel stays locked until you do).
+
+## 4. Add your OpenAI key
+
+**Settings → OpenAI**: paste the key from `platform.openai.com → API keys`, save, then
+press **Test OpenAI connection**. A green message means the key, the network and the
+model all work.
+
+If your host blocks outbound connections (rare on Spaceship, common on very locked-down
+plans), the test reports a connection error — ask support to allow outbound HTTPS to
+`api.openai.com`.
+
+Prefer to keep the key out of the database? Set it in cPanel → **MultiPHP INI Editor**
+or a `.user.ini`/`.htaccess` environment variable named `OPENAI_API_KEY`; it takes
+precedence over the stored one.
+
+## 5. Add a website and its knowledge
+
+1. **Websites → Add a website.** Give it a name and the domains it may run on
+   (`acme.com` covers `www.acme.com` and other subdomains). Leave domains empty only
+   while testing — an empty list lets any site embed that bot on your credits.
+2. **Knowledge base.** Paste your FAQ, services, pricing and policies as separate
+   documents, import key pages by URL, or upload TXT/MD/CSV/HTML/JSON files. Each save
+   indexes the document immediately.
+3. Use **Test retrieval** with a few real customer questions. If nothing matches,
+   add more detail or lower the minimum match score under **AI & answers**.
+4. **Design** tab: colours, wording, position, suggested questions. **Live preview**
+   opens a sample page with the real widget.
+
+## 6. Install the widget on the client site
+
+**Embed code** tab → copy the snippet:
+
+```html
+<script src="https://yourdomain.com/chatbot/embed.php?k=cb_xxxxxxxxxxxx" async></script>
+```
+
+Paste it before `</head>` (or `</body>`) on every page of the client's site.
+
+- **WordPress:** Appearance → Theme File Editor → `header.php`, or any "insert headers
+  and footers" plugin.
+- **Shopify:** Online Store → Themes → Edit code → `theme.liquid`, before `</head>`.
+- **Wix / Squarespace:** the custom-code / header-injection panel.
+- **Plain HTML:** in the shared header include.
+
+Design and knowledge changes take effect without touching the client site again; the
+embed script is cached for 5 minutes.
+
+## Maintenance
+
+- **Conversations** stores every transcript; delete individual chats there.
+- **Settings → Maintenance** clears old rate-limit rows (optional housekeeping).
+- **Regenerate key** (Embed tab) immediately disables an embed code that leaked —
+  remember to paste the new snippet on the client site.
+- Back up by exporting the database in phpMyAdmin; the files are static.
+
+## Troubleshooting
+
+| Symptom | Cause / fix |
+| --- | --- |
+| Widget does not appear | Wrong site key, site is **paused**, or the page's domain is not in the allow-list. Open the browser console and load the `embed.php` URL directly — it says which. |
+| Bot always replies with the fallback message | No OpenAI key, no matching knowledge, or the key has no credits. Check **Settings → Test connection** and **Test retrieval**. |
+| "This chatbot is not enabled for this domain" | Add the domain under the website's **General** tab. |
+| Documents stuck on "keyword only" | The embedding call failed (usually a missing key or blocked outbound HTTPS). Fix it, then **Re-index all**. |
+| 500 error after moving the install | `base_url` in `app/config.php` still points at the old address — edit that file or delete it and re-run the installer. |
+| Visitors hit "message limit" too soon | Raise *Messages per visitor per hour* under **AI & answers**. |

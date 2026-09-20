@@ -1,0 +1,29 @@
+# Chatbot platform - Apache / LiteSpeed (cPanel) configuration
+
+Options -Indexes
+
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    # The widget files are loaded cross-origin by client websites.
+    <FilesMatch "^(embed\.php|widget\.js)$">
+        Header set Access-Control-Allow-Origin "*"
+        Header set X-Frame-Options ""
+    </FilesMatch>
+</IfModule>
+
+# Never serve PHP source or config from these folders.
+RedirectMatch 404 ^/(.*/)?(app|storage)/.*$
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Optional pretty URL for the embed script: /embed.js?k=KEY
+    RewriteRule ^embed\.js$ embed.php [L,QSA]
+</IfModule>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 7 days"
+    ExpiresByType application/javascript "access plus 1 hours"
+</IfModule>
