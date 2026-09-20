@@ -75,6 +75,45 @@ final class OpenAi
         return array_values($vectors);
     }
 
+    /**
+     * Speech to text for the widget's voice button.
+     * Uses multipart/form-data, so it posts directly rather than through post().
+     */
+    public function transcribe(string $filePath, string $filename, string $model = 'whisper-1'): string
+    {
+        if (!function_exists('curl_init')) {
+            throw new OpenAiException('Voice messages need the cURL extension, which this server does not have.');
+        }
+
+        $ch = curl_init($this->baseUrl . '/audio/transcriptions');
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 120,
+            CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $this->apiKey],
+            CURLOPT_POSTFIELDS => [
+                'model' => $model,
+                'file' => new \CURLFile($filePath, 'application/octet-stream', $filename),
+            ],
+        ]);
+        $body = curl_exec($ch);
+        $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($body === false) {
+            throw new OpenAiException('Could not reach OpenAI: ' . $error);
+        }
+        $data = json_decode((string)$body, true);
+        if (!is_array($data)) {
+            throw new OpenAiException('Unexpected response from OpenAI (HTTP ' . $status . ').');
+        }
+        if ($status >= 400) {
+            throw new OpenAiException((string)($data['error']['message'] ?? 'Transcription failed.'));
+        }
+        return trim((string)($data['text'] ?? ''));
+    }
+
     public function ping(): string
     {
         $result = $this->chat(

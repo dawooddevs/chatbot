@@ -11,7 +11,7 @@ use PDO;
 final class Schema
 {
     /** Bump whenever statements() changes, so deployed updates migrate themselves. */
-    public const VERSION = 1;
+    public const VERSION = 2;
 
     /**
      * Runs the migrations once per schema version. Called on admin requests so a
@@ -35,6 +35,29 @@ final class Schema
         $pdo = $pdo ?? Database::pdo();
         foreach (self::statements() as $sql) {
             $pdo->exec($sql);
+        }
+        foreach (self::columns() as [$table, $column, $definition]) {
+            self::addColumn($pdo, $table, $column, $definition);
+        }
+    }
+
+    /** Columns added after the first release. @return array<int, array{0:string,1:string,2:string}> */
+    private static function columns(): array
+    {
+        return [
+            ['messages', 'attachment_id', 'INT UNSIGNED NULL AFTER content'],
+        ];
+    }
+
+    private static function addColumn(PDO $pdo, string $table, string $column, string $definition): void
+    {
+        $stmt = $pdo->prepare(
+            'SELECT COUNT(*) FROM information_schema.COLUMNS
+              WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?'
+        );
+        $stmt->execute([$table, $column]);
+        if ((int)$stmt->fetchColumn() === 0) {
+            $pdo->exec("ALTER TABLE `$table` ADD COLUMN `$column` $definition");
         }
     }
 
@@ -130,6 +153,20 @@ final class Schema
                 PRIMARY KEY (id),
                 KEY idx_messages_conversation (conversation_id, id),
                 KEY idx_messages_site (site_id, created_at)
+            ) $engine",
+
+            "CREATE TABLE IF NOT EXISTS attachments (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                site_id INT UNSIGNED NOT NULL,
+                conversation_id INT UNSIGNED NULL,
+                original_name VARCHAR(255) NOT NULL,
+                stored_name VARCHAR(120) NOT NULL,
+                mime VARCHAR(100) NOT NULL,
+                size_bytes INT UNSIGNED NOT NULL DEFAULT 0,
+                excerpt MEDIUMTEXT NULL,
+                created_at DATETIME NOT NULL,
+                PRIMARY KEY (id),
+                KEY idx_attachments_site (site_id, created_at)
             ) $engine",
 
             "CREATE TABLE IF NOT EXISTS settings (

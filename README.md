@@ -21,13 +21,15 @@ Admin panel  →  add website  →  add knowledge  →  copy embed code  →  cl
   Documents are chunked, embedded with `text-embedding-3-small` and searched by
   cosine similarity at answer time. A "test retrieval" box shows exactly which
   passages a question pulls in.
-- **Design manager** — header wording, welcome message, suggested questions, six
-  colours, light/dark theme, font, launcher icon/label, position and offsets, corner
-  radius, avatar, auto-open, branding line. No code on the client side.
+- **Design manager** — header wording, status line, welcome message, suggested
+  questions, six colours, light/dark theme, font, launcher icon/label, position and
+  offsets, corner radius, uploaded avatar, auto-open, and switches for the reset
+  button, attachments, voice and the branding line. No code on the client side.
 - **AI settings** — model, creativity, reply length, persona/system prompt, fallback
   message, strict-knowledge mode, passages per answer, minimum match score,
   remembered turns, per-visitor hourly message cap.
-- **Conversations** — full transcripts of every visitor chat, filterable per website.
+- **Conversations** — full transcripts of every visitor chat, filterable per website,
+  including any files a visitor attached (served only to the signed-in owner).
 - **Settings** — OpenAI key (or `OPENAI_API_KEY` env var), API base URL, defaults,
   connection test, platform name.
 
@@ -57,6 +59,8 @@ index.php            admin front controller (?r=route)
 install.php          one-page installer - delete after use
 embed.php            serves the widget + that site's config
 api/chat.php         public chat endpoint (CORS limited to allowed domains)
+api/upload.php       visitor file attachments
+api/transcribe.php   voice note -> text
 assets/widget.js     the widget itself
 assets/admin.css     admin styling
 app/

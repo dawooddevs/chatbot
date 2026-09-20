@@ -7,7 +7,7 @@ final class Site
 {
     public const DESIGN_DEFAULTS = [
         'title' => 'Chat with us',
-        'subtitle' => 'We usually reply instantly',
+        'subtitle' => 'Typically replies in a few seconds',
         'welcome_message' => "Hi! 👋 Ask me anything about our products and services.",
         'placeholder' => 'Type your message…',
         'primary_color' => '#4f46e5',
@@ -21,9 +21,13 @@ final class Site
         'offset_x' => 20,
         'offset_y' => 20,
         'radius' => 16,
-        'launcher_label' => '',
+        'launcher_label' => 'Chat',
         'launcher_icon' => 'chat',
         'avatar_url' => '',
+        'show_status_dot' => 1,
+        'show_attachments' => 1,
+        'show_voice' => 1,
+        'show_reset' => 1,
         'show_branding' => 1,
         'auto_open' => 0,
         'auto_open_delay' => 5,
@@ -137,11 +141,18 @@ final class Site
      */
     public static function allowsOrigin(array $site, string $origin): bool
     {
+        $host = self::normalizeDomain($origin);
+
+        // The panel's own host is always allowed, so the built-in preview page
+        // works without adding it to every site's list.
+        if ($host !== '' && $host === self::platformHost()) {
+            return true;
+        }
+
         $domains = $site['domains'] ?? [];
         if ($domains === []) {
             return true;
         }
-        $host = self::normalizeDomain($origin);
         if ($host === '') {
             return false;
         }
@@ -154,6 +165,11 @@ final class Site
             }
         }
         return false;
+    }
+
+    public static function platformHost(): string
+    {
+        return self::normalizeDomain((string)Config::get('base_url', ''));
     }
 
     public static function embedCode(array $site): string

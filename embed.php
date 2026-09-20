@@ -25,6 +25,8 @@ if (!$site || $site['status'] !== 'active') {
 $config = [
     'key' => $site['site_key'],
     'endpoint' => base_url('api/chat.php'),
+    'uploadEndpoint' => base_url('api/upload.php'),
+    'transcribeEndpoint' => base_url('api/transcribe.php'),
     'name' => $site['name'],
     'design' => $site['design'],
 ];

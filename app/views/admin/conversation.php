@@ -14,6 +14,12 @@
       <?php foreach ($messages as $message): ?>
         <div class="bubble <?= $message['role'] === 'user' ? 'user' : 'assistant' ?>">
           <?= nl2br(e($message['content'])) ?>
+          <?php if (!empty($message['attachment_id']) && !empty($message['original_name'])): ?>
+            <a href="<?= e(admin_url('attachment', ['id' => $message['attachment_id']])) ?>" target="_blank" rel="noopener"
+               style="display:inline-block;margin-top:8px;color:inherit;font-size:12.5px">
+              📎 <?= e($message['original_name']) ?> (<?= e(format_bytes((int)$message['size_bytes'])) ?>)
+            </a>
+          <?php endif; ?>
           <span class="time"><?= e(date('j M Y, H:i', strtotime((string)$message['created_at']))) ?></span>
         </div>
       <?php endforeach; ?>

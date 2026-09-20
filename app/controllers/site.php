@@ -4,6 +4,7 @@ declare(strict_types=1);
 use App\Auth;
 use App\Database;
 use App\KnowledgeBase;
+use App\Uploads;
 use App\OpenAi;
 use App\Session;
 use App\Site;
@@ -60,6 +61,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $design['offset_y'] = max(0, min(200, (int)post('offset_y', '20')));
         $design['radius'] = max(0, min(30, (int)post('radius', '16')));
         $design['avatar_url'] = filter_var((string)post('avatar_url', ''), FILTER_VALIDATE_URL) ? (string)post('avatar_url') : '';
+        if (!empty($_FILES['avatar_file']['name'])) {
+            try {
+                $design['avatar_url'] = Uploads::storeAvatar($_FILES['avatar_file']);
+            } catch (Throwable $e) {
+                Session::flash('error', $e->getMessage());
+            }
+        }
+        if (post('remove_avatar')) {
+            $design['avatar_url'] = '';
+        }
+        $design['show_status_dot'] = post('show_status_dot') ? 1 : 0;
+        $design['show_attachments'] = post('show_attachments') ? 1 : 0;
+        $design['show_voice'] = post('show_voice') ? 1 : 0;
+        $design['show_reset'] = post('show_reset') ? 1 : 0;
         $design['show_branding'] = post('show_branding') ? 1 : 0;
         $design['auto_open'] = post('auto_open') ? 1 : 0;
         $design['auto_open_delay'] = max(0, min(120, (int)post('auto_open_delay', '5')));

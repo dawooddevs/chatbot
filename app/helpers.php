@@ -79,3 +79,14 @@ function color_or(string $value, string $fallback): string
 {
     return preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1 ? strtolower($value) : $fallback;
 }
+
+function format_bytes(int $bytes): string
+{
+    if ($bytes < 1024) {
+        return $bytes . ' B';
+    }
+    if ($bytes < 1024 * 1024) {
+        return round($bytes / 1024, 1) . ' KB';
+    }
+    return round($bytes / (1024 * 1024), 1) . ' MB';
+}

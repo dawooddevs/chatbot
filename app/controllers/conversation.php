@@ -21,5 +21,12 @@ if (!$conversation || (int)$conversation['user_id'] !== Auth::id()) {
 
 View::display('admin.conversation', [
     'conversation' => $conversation,
-    'messages' => Database::all('SELECT * FROM messages WHERE conversation_id = ? ORDER BY id', [$id]),
+    'messages' => Database::all(
+        'SELECT m.*, a.original_name, a.mime, a.size_bytes
+           FROM messages m
+           LEFT JOIN attachments a ON a.id = m.attachment_id
+          WHERE m.conversation_id = ?
+          ORDER BY m.id',
+        [$id]
+    ),
 ]);

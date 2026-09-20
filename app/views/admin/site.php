@@ -53,7 +53,7 @@ $tabs = ['general' => 'General', 'design' => 'Design', 'ai' => 'AI & answers', '
   </div>
 
 <?php elseif ($tab === 'design'): ?>
-  <form method="post" action="<?= e(admin_url('site')) ?>">
+  <form method="post" action="<?= e(admin_url('site')) ?>" enctype="multipart/form-data">
     <?= Csrf::field() ?>
     <input type="hidden" name="action" value="save_design">
     <input type="hidden" name="id" value="<?= (int)$site['id'] ?>">
@@ -66,8 +66,10 @@ $tabs = ['general' => 'General', 'design' => 'Design', 'ai' => 'AI & answers', '
           <input type="text" id="title" name="title" value="<?= e($design['title']) ?>" maxlength="60">
         </div>
         <div class="field">
-          <label for="subtitle">Header subtitle</label>
-          <input type="text" id="subtitle" name="subtitle" value="<?= e($design['subtitle']) ?>" maxlength="80">
+          <label for="subtitle">Status line</label>
+          <input type="text" id="subtitle" name="subtitle" value="<?= e($design['subtitle']) ?>" maxlength="80"
+                 placeholder="Typically replies in a few seconds">
+          <div class="help">Sits under the title in the header, next to the green dot.</div>
         </div>
         <div class="field">
           <label for="welcome_message">Welcome message</label>
@@ -156,8 +158,23 @@ $tabs = ['general' => 'General', 'design' => 'Design', 'ai' => 'AI & answers', '
           </div>
         </div>
         <div class="field">
-          <label for="avatar_url">Avatar image URL</label>
+          <label>Header avatar</label>
+          <?php if ($design['avatar_url']): ?>
+            <div class="actions" style="margin-bottom:10px">
+              <img src="<?= e($design['avatar_url']) ?>" alt="" width="44" height="44"
+                   style="border-radius:50%;object-fit:cover;border:1px solid var(--border)">
+              <label class="checkbox" style="margin:0">
+                <input type="checkbox" name="remove_avatar" value="1"> Remove this image
+              </label>
+            </div>
+          <?php endif; ?>
+          <input type="file" name="avatar_file" accept=".png,.jpg,.jpeg,.gif,.webp,.svg">
+          <div class="help">PNG, JPG, GIF, WEBP or SVG, up to 2 MB. Square images look best.</div>
+        </div>
+        <div class="field">
+          <label for="avatar_url">…or an image URL</label>
           <input type="url" id="avatar_url" name="avatar_url" value="<?= e($design['avatar_url']) ?>" placeholder="https://acme.com/logo.png">
+          <div class="help">An uploaded image replaces whatever is here.</div>
         </div>
         <div class="field checkbox">
           <input type="checkbox" id="auto_open" name="auto_open" value="1" <?= $design['auto_open'] ? 'checked' : '' ?>>
@@ -166,6 +183,22 @@ $tabs = ['general' => 'General', 'design' => 'Design', 'ai' => 'AI & answers', '
         <div class="field">
           <label for="auto_open_delay">Auto-open delay (seconds)</label>
           <input type="number" id="auto_open_delay" name="auto_open_delay" min="0" max="120" value="<?= (int)$design['auto_open_delay'] ?>">
+        </div>
+        <div class="field checkbox">
+          <input type="checkbox" id="show_status_dot" name="show_status_dot" value="1" <?= $design['show_status_dot'] ? 'checked' : '' ?>>
+          <label for="show_status_dot" style="margin:0">Show the green "online" dot</label>
+        </div>
+        <div class="field checkbox">
+          <input type="checkbox" id="show_reset" name="show_reset" value="1" <?= $design['show_reset'] ? 'checked' : '' ?>>
+          <label for="show_reset" style="margin:0">Show the reset button in the header</label>
+        </div>
+        <div class="field checkbox">
+          <input type="checkbox" id="show_attachments" name="show_attachments" value="1" <?= $design['show_attachments'] ? 'checked' : '' ?>>
+          <label for="show_attachments" style="margin:0">Let visitors attach files (images, PDF, text — 5 MB)</label>
+        </div>
+        <div class="field checkbox">
+          <input type="checkbox" id="show_voice" name="show_voice" value="1" <?= $design['show_voice'] ? 'checked' : '' ?>>
+          <label for="show_voice" style="margin:0">Let visitors record voice messages (transcribed by OpenAI)</label>
         </div>
         <div class="field checkbox">
           <input type="checkbox" id="show_branding" name="show_branding" value="1" <?= $design['show_branding'] ? 'checked' : '' ?>>

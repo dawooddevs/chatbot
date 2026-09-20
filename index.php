@@ -24,6 +24,7 @@ const ROUTES = [
     'knowledge' => 'knowledge',
     'conversations' => 'conversations',
     'conversation' => 'conversation',
+    'attachment' => 'attachment',
     'settings' => 'settings',
     'profile' => 'profile',
     'preview' => 'preview',

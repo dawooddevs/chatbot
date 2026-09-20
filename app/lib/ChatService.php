@@ -15,13 +15,25 @@ final class ChatService
         $ai = $site['ai'];
         $conversationId = self::resolveConversation($site, $context);
 
+        $attachment = self::attachment($site, $conversationId, (int)($context['attachment_id'] ?? 0));
+        $stored = $question;
+        if ($attachment) {
+            $stored = trim($question . "\n[file: " . $attachment['original_name'] . ']');
+        }
+
         Database::run(
-            'INSERT INTO messages (conversation_id, site_id, role, content, created_at)
-             VALUES (?, ?, ?, ?, NOW())',
-            [$conversationId, (int)$site['id'], 'user', mb_substr($question, 0, 4000)]
+            'INSERT INTO messages (conversation_id, site_id, role, content, attachment_id, created_at)
+             VALUES (?, ?, ?, ?, ?, NOW())',
+            [
+                $conversationId,
+                (int)$site['id'],
+                'user',
+                mb_substr($stored, 0, 4000),
+                $attachment['id'] ?? null,
+            ]
         );
 
-        $passages = KnowledgeBase::search(
+        $passages = $question === '' ? [] : KnowledgeBase::search(
             $site,
             $question,
             (int)$ai['top_k'],
@@ -31,6 +43,9 @@ final class ChatService
         $messages = [['role' => 'system', 'content' => self::systemPrompt($site, $passages)]];
         foreach (self::history($conversationId, (int)$ai['history_turns']) as $row) {
             $messages[] = ['role' => $row['role'], 'content' => $row['content']];
+        }
+        if ($attachment) {
+            $messages[] = ['role' => 'system', 'content' => self::attachmentContext($attachment)];
         }
 
         try {
@@ -65,6 +80,33 @@ final class ChatService
             'conversation_id' => $conversationId,
             'sources' => array_values(array_unique(array_column($passages, 'title'))),
         ];
+    }
+
+    /** Loads an attachment the visitor just uploaded, if it belongs to this site. */
+    private static function attachment(array $site, int $conversationId, int $attachmentId): ?array
+    {
+        if ($attachmentId <= 0) {
+            return null;
+        }
+        $attachment = Uploads::find($attachmentId, (int)$site['id']);
+        if (!$attachment) {
+            return null;
+        }
+        Database::run(
+            'UPDATE attachments SET conversation_id = ? WHERE id = ? AND conversation_id IS NULL',
+            [$conversationId, $attachmentId]
+        );
+        return $attachment;
+    }
+
+    private static function attachmentContext(array $attachment): string
+    {
+        $note = 'The visitor attached a file named "' . $attachment['original_name'] . '" (' . $attachment['mime'] . ').';
+        if (!empty($attachment['excerpt'])) {
+            return $note . " Its contents:\n" . $attachment['excerpt'];
+        }
+        return $note . ' You cannot read this file type, so acknowledge it and ask what they need from it,'
+            . ' or tell them a person will look at it.';
     }
 
     private static function systemPrompt(array $site, array $passages): string

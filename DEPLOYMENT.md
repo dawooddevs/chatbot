@@ -160,3 +160,7 @@ deployment.
 | Links or the embed code point at the wrong address | `base_url` in `app/config.php` is stale — edit that one line, or delete the file and re-run the installer. |
 | Subdomain shows a cPanel default page | The files landed in a sub-folder; `index.php` must sit directly in `chatbot.dawood.top/`. |
 | Visitors hit "message limit" too soon | Raise *Messages per visitor per hour* under **AI & answers**. |
+| "This chatbot is not enabled for this domain" on your own preview page | Fixed — the panel's own host is always allowed. Make sure the files are up to date. |
+| Voice button missing | The browser blocks `MediaRecorder` on plain HTTP; the site must be HTTPS. It is also hidden when *Let visitors record voice messages* is off. |
+| Voice note is not transcribed | Transcription needs the cURL extension and a working OpenAI key. |
+| Attachment fails with 413 | Raise `upload_max_filesize` and `post_max_size` in cPanel → MultiPHP INI Editor. |
