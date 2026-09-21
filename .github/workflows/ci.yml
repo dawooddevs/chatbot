@@ -1,9 +1,8 @@
 name: CI
 
+# Pushes are linted by the deploy workflow, so this only covers pull requests.
 on:
   pull_request:
-  push:
-    branches-ignore: [main]
 
 jobs:
   lint:
