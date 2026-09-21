@@ -117,7 +117,15 @@ uploads it over FTPS on every push to `main`.
      `./` instead.
    - `FTP_DRY_RUN` — set to `true` for the first run: the log lists what *would* be
      uploaded without touching the server. Delete it afterwards.
-4. Push to `main` (or run the workflow manually from the **Actions** tab).
+4. On the **Variables** tab also set `DEPLOY_BRANCH` to the branch that should go
+   live (default `main`). Point it at the branch Claude pushes to and every push
+   deploys on its own; otherwise merge into `main` when you want a release.
+5. Push to that branch, or run the workflow manually from the **Actions** tab
+   (a manual run deploys whichever ref you pick).
+
+After uploading, the workflow requests the login page and fails the run if it does
+not come back as a rendered HTTP 200, so a broken deployment is visible in the
+Actions tab rather than on the live site.
 
 The workflow never uploads `app/config.php`, `storage/logs/`, `install.php` or the
 docs, so your live credentials, logs and the deleted installer stay as they are.

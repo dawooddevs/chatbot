@@ -1,8 +1,10 @@
 name: Deploy to cPanel
 
+# Deploys whichever branch is named by the DEPLOY_BRANCH repository variable
+# (default: main). Set it to the branch Claude pushes to and every push goes
+# live on its own; a manual run from the Actions tab deploys any ref.
 on:
   push:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -26,6 +28,7 @@ jobs:
   deploy:
     name: Upload over FTPS
     needs: lint
+    if: github.event_name == 'workflow_dispatch' || github.ref_name == (vars.DEPLOY_BRANCH || 'main')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,15 +45,29 @@ jobs:
           # A home-level account needs 'chatbot.dawood.top/'; an account scoped to
           # that folder needs './'.
           server-dir: ${{ vars.FTP_SERVER_DIR || 'chatbot.dawood.top/' }}
-          # Set to true for a first run to see what would change without uploading.
+          # Set the FTP_DRY_RUN variable to true for a first run that changes nothing.
           dry-run: ${{ vars.FTP_DRY_RUN == 'true' }}
-          # Never overwrite live credentials, logs or the installer.
+          # Never overwrite live credentials, uploads, logs or the installer.
           exclude: |
             **/.git*
             **/.git*/**
             **/.github/**
             app/config.php
-            storage/logs/**
+            storage/**
+            assets/uploads/**
             install.php
             README.md
             DEPLOYMENT.md
+
+      - name: Smoke test the deployed site
+        if: vars.FTP_DRY_RUN != 'true'
+        env:
+          SITE_URL: ${{ vars.SITE_URL || 'https://chatbot.dawood.top' }}
+        run: |
+          set -e
+          echo "Checking $SITE_URL"
+          status=$(curl -sS -o /tmp/page.html -w '%{http_code}' -L --max-time 30 "$SITE_URL/index.php?r=login")
+          echo "HTTP $status"
+          test "$status" = "200"
+          grep -qi 'sign in' /tmp/page.html
+          echo "Login page rendered - deployment looks healthy."
