@@ -82,10 +82,14 @@
     /* launcher */
     '.launcher{position:fixed;' + side + ':' + offsetX + 'px;bottom:' + offsetY + 'px;display:flex;align-items:center;gap:9px;',
     'border:0;cursor:pointer;border-radius:999px;height:54px;padding:0 22px;background:' + (design.bubble_color || primary) + ';',
-    'color:' + onPrimary + ';font:600 15px/1 ' + font + ';box-shadow:0 8px 22px rgba(15,23,42,.22);transition:transform .15s ease,box-shadow .15s ease}',
+    'color:' + onPrimary + ';font:600 15px/1 ' + font + ';box-shadow:0 8px 22px rgba(15,23,42,.22);',
+    'transition:transform .15s ease,box-shadow .15s ease}',
     '.launcher:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(15,23,42,.28)}',
     '.launcher svg{width:22px;height:22px;fill:currentColor;flex:none}',
     '.launcher.icon-only{padding:0;width:54px;justify-content:center}',
+    '.launcher .badge{position:absolute;top:-5px;' + (side === 'left' ? 'left' : 'right') + ':-5px;min-width:23px;height:23px;',
+    'padding:0 6px;border-radius:999px;background:' + (design.badge_color || '#ef4444') + ';color:#fff;',
+    'font:700 12px/23px ' + font + ';text-align:center;box-shadow:0 0 0 2px rgba(255,255,255,.92)}',
 
     /* panel - anchored at the launcher, opening upwards from it */
     '.panel{position:fixed;' + side + ':' + offsetX + 'px;bottom:' + offsetY + 'px;width:384px;max-width:calc(100vw - 24px);',
@@ -145,8 +149,8 @@
     '.composer textarea{width:100%;border:0;outline:none;resize:none;background:transparent;color:' + textColor + ';',
     'font:inherit;font-size:14.5px;line-height:1.45;max-height:120px;padding:4px 4px 2px}',
     '.composer textarea::placeholder{color:' + mutedColor + '}',
-    '.tools{display:flex;align-items:center;gap:6px;padding-top:6px}',
-    '.tool{width:34px;height:34px;border-radius:50%;border:0;background:transparent;color:' + mutedColor + ';cursor:pointer;',
+    '.tools{display:flex;align-items:center;gap:1px;padding-top:6px}',
+    '.tool{width:32px;height:32px;border-radius:50%;border:0;background:transparent;color:' + mutedColor + ';cursor:pointer;',
     'display:flex;align-items:center;justify-content:center;transition:background .15s ease,color .15s ease}',
     '.tool:hover{background:' + (dark ? 'rgba(255,255,255,.08)' : 'rgba(15,23,42,.06)') + ';color:' + textColor + '}',
     '.tool svg{width:19px;height:19px;fill:currentColor}',
@@ -192,9 +196,25 @@
   var launcher = el('button', 'launcher' + (design.launcher_label ? '' : ' icon-only'));
   launcher.type = 'button';
   launcher.setAttribute('aria-label', design.title || 'Open chat');
-  launcher.innerHTML = svg(design.launcher_icon || 'chat') + (design.launcher_label ? '<span></span>' : '');
+  launcher.innerHTML = svg(design.launcher_icon || 'chat') + (design.launcher_label ? '<span class="label"></span>' : '');
   if (design.launcher_label) {
-    launcher.querySelector('span').textContent = design.launcher_label;
+    launcher.querySelector('.label').textContent = design.launcher_label;
+  }
+
+  // Unread badge, shown until this visitor opens the chat for the first time.
+  var badgeCount = Math.max(0, Math.min(99, Number(design.launcher_badge || 0)));
+  var badge = null;
+  if (badgeCount > 0) {
+    badge = el('span', 'badge');
+    badge.textContent = String(badgeCount);
+    launcher.appendChild(badge);
+  }
+
+  function hideBadge() {
+    if (badge && badge.parentNode) {
+      badge.parentNode.removeChild(badge);
+      badge = null;
+    }
   }
 
   /* ---------- panel ---------- */
@@ -462,6 +482,28 @@
   }
 
   /* ---------- voice ---------- */
+  function microphoneMessage(error) {
+    if (!window.isSecureContext) {
+      return 'Voice needs a secure (https) page. Open this site over https and try again.';
+    }
+    switch (error && error.name) {
+      case 'NotAllowedError':
+      case 'PermissionDeniedError':
+        return 'Microphone permission was refused. Click the lock icon in the address bar, set Microphone to Allow, reload, then tap the mic again.';
+      case 'NotFoundError':
+      case 'DevicesNotFoundError':
+      case 'OverconstrainedError':
+        return 'No microphone was found on this device.';
+      case 'NotReadableError':
+      case 'TrackStartError':
+        return 'The microphone is already in use by another app.';
+      case 'SecurityError':
+        return 'This page is not allowed to use the microphone.';
+      default:
+        return 'The microphone could not be started' + (error && error.name ? ' (' + error.name + ')' : '') + '.';
+    }
+  }
+
   var recorder = null;
   var chunks = [];
 
@@ -517,8 +559,11 @@
       micBtn.classList.add('recording');
       micBtn.innerHTML = svg('stop');
       recStatus.classList.add('on');
-    }).catch(function () {
-      showError('Microphone access was blocked by the browser.');
+    }).catch(function (error) {
+      if (window.console && console.warn) {
+        console.warn('[chatbot] microphone unavailable:', error && error.name, error && error.message);
+      }
+      showError(microphoneMessage(error));
     });
   }
 
@@ -607,6 +652,7 @@
   function toggle(open) {
     var isOpen = open === undefined ? !panel.classList.contains('open') : open;
     if (isOpen) {
+      hideBadge();
       panel.classList.add('open');
       launcher.style.display = 'none';
       requestAnimationFrame(function () { panel.classList.add('shown'); });

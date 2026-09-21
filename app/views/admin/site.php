@@ -89,6 +89,18 @@ $tabs = ['general' => 'General', 'design' => 'Design', 'ai' => 'AI & answers', '
           <input type="text" id="launcher_label" name="launcher_label" value="<?= e($design['launcher_label']) ?>" maxlength="30" placeholder="Leave empty for an icon-only bubble">
         </div>
         <div class="field">
+          <label for="launcher_badge">Launcher badge number</label>
+          <input type="number" id="launcher_badge" name="launcher_badge" min="0" max="99" value="<?= (int)$design['launcher_badge'] ?>">
+          <div class="help">The small red count on the bubble. 0 hides it; it disappears once the visitor opens the chat.</div>
+        </div>
+        <div class="field">
+          <label for="badge_color">Badge colour</label>
+          <div class="color-row">
+            <input type="color" value="<?= e($design['badge_color']) ?>" oninput="this.nextElementSibling.value = this.value">
+            <input type="text" id="badge_color" name="badge_color" class="mono" value="<?= e($design['badge_color']) ?>" maxlength="7">
+          </div>
+        </div>
+        <div class="field">
           <label for="launcher_icon">Launcher icon</label>
           <select id="launcher_icon" name="launcher_icon">
             <?php foreach (['chat' => 'Speech bubble', 'question' => 'Question mark', 'sparkle' => 'Sparkle', 'support' => 'Headset'] as $value => $label): ?>

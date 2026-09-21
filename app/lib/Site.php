@@ -23,6 +23,8 @@ final class Site
         'radius' => 16,
         'launcher_label' => 'Chat',
         'launcher_icon' => 'chat',
+        'launcher_badge' => 1,
+        'badge_color' => '#ef4444',
         'avatar_url' => '',
         'show_status_dot' => 1,
         'show_attachments' => 1,

@@ -171,4 +171,5 @@ deployment.
 | "This chatbot is not enabled for this domain" on your own preview page | Fixed — the panel's own host is always allowed. Make sure the files are up to date. |
 | Voice button missing | The browser blocks `MediaRecorder` on plain HTTP; the site must be HTTPS. It is also hidden when *Let visitors record voice messages* is off. |
 | Voice note is not transcribed | Transcription needs the cURL extension and a working OpenAI key. |
+| Mic says permission was refused | Click the lock icon in the address bar, set Microphone to Allow, reload the page. The widget now names the real reason (refused, no device, in use elsewhere), so read the message under the composer. |
 | Attachment fails with 413 | Raise `upload_max_filesize` and `post_max_size` in cPanel → MultiPHP INI Editor. |
