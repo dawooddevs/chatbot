@@ -101,6 +101,11 @@ $tabs = ['general' => 'General', 'design' => 'Design', 'ai' => 'AI & answers', '
           </div>
         </div>
         <div class="field">
+          <label for="launcher_radius">Launcher corner radius</label>
+          <input type="number" id="launcher_radius" name="launcher_radius" min="8" max="27" value="<?= (int)$design['launcher_radius'] ?>">
+          <div class="help">27 is a full pill; lower values square the bubble off.</div>
+        </div>
+        <div class="field">
           <label for="launcher_icon">Launcher icon</label>
           <select id="launcher_icon" name="launcher_icon">
             <?php foreach (['chat' => 'Speech bubble', 'question' => 'Question mark', 'sparkle' => 'Sparkle', 'support' => 'Headset'] as $value => $label): ?>

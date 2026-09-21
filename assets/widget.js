@@ -67,6 +67,7 @@
   var offsetY = Number(design.offset_y || 20);
   var radius = Number(design.radius || 16);
   var font = FONTS[design.font] || FONTS.system;
+  var launcherRadius = Math.max(8, Math.min(27, Number(design.launcher_radius === undefined ? 26 : design.launcher_radius)));
 
   var host = document.createElement('div');
   host.id = 'chatbot-widget-root';
@@ -81,7 +82,7 @@
 
     /* launcher */
     '.launcher{position:fixed;' + side + ':' + offsetX + 'px;bottom:' + offsetY + 'px;display:flex;align-items:center;gap:9px;',
-    'border:0;cursor:pointer;border-radius:999px;height:54px;padding:0 22px;background:' + (design.bubble_color || primary) + ';',
+    'border:0;cursor:pointer;border-radius:' + launcherRadius + 'px;height:54px;padding:0 24px;background:' + (design.bubble_color || primary) + ';',
     'color:' + onPrimary + ';font:600 15px/1 ' + font + ';box-shadow:0 8px 22px rgba(15,23,42,.22);',
     'transition:transform .15s ease,box-shadow .15s ease}',
     '.launcher:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(15,23,42,.28)}',
@@ -149,11 +150,11 @@
     '.composer textarea{width:100%;border:0;outline:none;resize:none;background:transparent;color:' + textColor + ';',
     'font:inherit;font-size:14.5px;line-height:1.45;max-height:120px;padding:4px 4px 2px}',
     '.composer textarea::placeholder{color:' + mutedColor + '}',
-    '.tools{display:flex;align-items:center;gap:1px;padding-top:6px}',
-    '.tool{width:32px;height:32px;border-radius:50%;border:0;background:transparent;color:' + mutedColor + ';cursor:pointer;',
+    '.tools{display:flex;align-items:center;gap:0;padding-top:6px}',
+    '.tool{width:30px;height:30px;border-radius:50%;border:0;background:transparent;color:' + mutedColor + ';cursor:pointer;',
     'display:flex;align-items:center;justify-content:center;transition:background .15s ease,color .15s ease}',
     '.tool:hover{background:' + (dark ? 'rgba(255,255,255,.08)' : 'rgba(15,23,42,.06)') + ';color:' + textColor + '}',
-    '.tool svg{width:19px;height:19px;fill:currentColor}',
+    '.tool svg{width:18px;height:18px;fill:currentColor}',
     '.tool.recording{background:#fee2e2;color:#dc2626}',
     '.rec{flex:1;font-size:12.5px;color:#dc2626;display:none;align-items:center;gap:6px}',
     '.rec.on{display:flex}',
@@ -493,7 +494,7 @@
       case 'NotFoundError':
       case 'DevicesNotFoundError':
       case 'OverconstrainedError':
-        return 'No microphone was found on this device.';
+        return 'No microphone was found. Plug one in, or check your system sound settings, then reload the page.';
       case 'NotReadableError':
       case 'TrackStartError':
         return 'The microphone is already in use by another app.';
@@ -565,6 +566,17 @@
       }
       showError(microphoneMessage(error));
     });
+  }
+
+  // A button that cannot possibly work is worse than no button.
+  if (micBtn && navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+    navigator.mediaDevices.enumerateDevices().then(function (devices) {
+      var hasInput = devices.some(function (device) { return device.kind === 'audioinput'; });
+      if (!hasInput && micBtn && micBtn.parentNode) {
+        micBtn.parentNode.removeChild(micBtn);
+        micBtn = null;
+      }
+    }).catch(function () { /* keep the button and let the click report the reason */ });
   }
 
   if (micBtn) {

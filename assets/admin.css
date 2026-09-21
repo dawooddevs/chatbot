@@ -122,6 +122,14 @@ tr:last-child td { border-bottom: 0; }
 .alert.warning { background: #fffbeb; color: #92400e; border-color: #fde68a; }
 .alert.info { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
 
+.release-notice { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.release-notice .muted { font-size: 13px; margin-top: 3px; }
+.release-close {
+  border: 0; background: transparent; color: inherit; cursor: pointer;
+  font-size: 22px; line-height: 1; padding: 0 2px; opacity: .65;
+}
+.release-close:hover { opacity: 1; }
+
 .tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--border); margin-bottom: 20px; flex-wrap: wrap; }
 .tabs a {
   padding: 10px 14px; text-decoration: none; color: var(--muted);

@@ -2,10 +2,16 @@
 declare(strict_types=1);
 
 use App\Auth;
+use App\Release;
 use App\Database;
 use App\Settings;
 use App\Site;
 use App\View;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && post('action') === 'dismiss_release') {
+    Release::acknowledge((string)post('code', ''));
+    redirect(admin_url('dashboard'));
+}
 
 $userId = Auth::id();
 $sites = Site::forUser($userId);
@@ -37,4 +43,5 @@ View::display('admin.dashboard', [
     'stats' => $stats,
     'recent' => $recent,
     'hasKey' => Settings::openAiKey() !== '',
+    'release' => Release::unacknowledged(),
 ]);

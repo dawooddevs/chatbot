@@ -53,6 +53,16 @@ jobs:
           echo "Uploading into: $dir"
           echo "dir=$dir" >> "$GITHUB_OUTPUT"
 
+      - name: Stamp the build
+        run: |
+          set -eu
+          jq -n \
+            --arg code "$(git rev-parse --short HEAD)" \
+            --arg subject "$(git log -1 --pretty=%s)" \
+            --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{code: $code, subject: $subject, deployed_at: $at}' > VERSION
+          cat VERSION
+
       - name: Deploy
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:

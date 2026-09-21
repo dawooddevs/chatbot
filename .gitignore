@@ -3,3 +3,4 @@ storage/logs/*.log
 storage/cache/
 .DS_Store
 *.swp
+VERSION

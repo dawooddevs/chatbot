@@ -49,6 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $design['launcher_icon'] = in_array(post('launcher_icon'), ['chat', 'question', 'sparkle', 'support'], true)
             ? (string)post('launcher_icon') : 'chat';
         $design['launcher_badge'] = max(0, min(99, (int)post('launcher_badge', '0')));
+        $design['launcher_radius'] = max(8, min(27, (int)post('launcher_radius', '26')));
         $design['badge_color'] = color_or((string)post('badge_color', ''), '#ef4444');
         $design['primary_color'] = color_or((string)post('primary_color', ''), $design['primary_color']);
         $design['text_on_primary'] = color_or((string)post('text_on_primary', ''), '#ffffff');
