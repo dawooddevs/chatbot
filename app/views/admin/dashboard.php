@@ -1,15 +1,8 @@
 <?php if ($release): ?>
-  <div class="alert success release-notice">
-    <div>
-      <strong>Update deployed</strong> — build
-      <span class="mono"><?= e($release['code']) ?></span>
-      <?php if ($release['deployed_at']): ?>
-        · <?= e(time_ago(str_replace(['T', 'Z'], [' ', ''], $release['deployed_at']))) ?>
-      <?php endif; ?>
-      <?php if ($release['subject']): ?>
-        <div class="muted"><?= e($release['subject']) ?></div>
-      <?php endif; ?>
-    </div>
+  <div class="release-notice">
+    <span><strong>Update deployed</strong> — build <span class="mono"><?= e($release['code']) ?></span><?php
+      if ($release['deployed_at']): ?> · <?= e(time_ago(str_replace(['T', 'Z'], [' ', ''], $release['deployed_at']))) ?><?php
+      endif; ?></span>
     <form method="post" action="<?= e(admin_url('dashboard')) ?>">
       <?= App\Csrf::field() ?>
       <input type="hidden" name="action" value="dismiss_release">

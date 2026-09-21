@@ -19,7 +19,7 @@
     mono: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
   };
   var ICONS = {
-    chat: '<path d="M12 3C6.99 3 3 6.36 3 10.5c0 2.3 1.23 4.35 3.17 5.72-.13 1.2-.6 2.3-1.4 3.2-.24.27-.06.7.3.66 1.9-.2 3.5-.9 4.72-1.8.7.13 1.44.2 2.21.2 5.01 0 9-3.36 9-7.5S17.01 3 12 3Z"/>',
+    chat: '<path d="M5 4.5h14a2.5 2.5 0 0 1 2.5 2.5v7.5a2.5 2.5 0 0 1-2.5 2.5h-8.2l-4 3a.6.6 0 0 1-1-.48V17H5a2.5 2.5 0 0 1-2.5-2.5V7A2.5 2.5 0 0 1 5 4.5Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>',
     question: '<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm.1 15.5a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4Zm1.7-5.7c-.7.5-.9.8-.9 1.4v.3h-1.9v-.4c0-1.2.5-1.9 1.4-2.5.8-.6 1.1-.9 1.1-1.5 0-.7-.5-1.1-1.3-1.1-.8 0-1.4.5-1.5 1.4H8.8C8.9 7.6 10.2 6.5 12.2 6.5c2 0 3.3 1.1 3.3 2.7 0 1.1-.5 1.8-1.7 2.6Z"/>',
     sparkle: '<path d="M12 2.5 13.9 8l5.6 1.9-5.6 2L12 17.5 10.1 11.9 4.5 9.9 10.1 8 12 2.5ZM19 15l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9L19 15Z"/>',
     support: '<path d="M12 2a8 8 0 0 0-8 8v5a3 3 0 0 0 3 3h1v-7H6v-1a6 6 0 1 1 12 0v1h-2v7h1a3 3 0 0 0 3-3v-5a8 8 0 0 0-8-8Z"/>',
@@ -67,7 +67,7 @@
   var offsetY = Number(design.offset_y || 20);
   var radius = Number(design.radius || 16);
   var font = FONTS[design.font] || FONTS.system;
-  var launcherRadius = Math.max(8, Math.min(27, Number(design.launcher_radius === undefined ? 26 : design.launcher_radius)));
+  var launcherRadius = Math.max(8, Math.min(28, Number(design.launcher_radius === undefined ? 24 : design.launcher_radius)));
 
   var host = document.createElement('div');
   host.id = 'chatbot-widget-root';
@@ -82,12 +82,12 @@
 
     /* launcher */
     '.launcher{position:fixed;' + side + ':' + offsetX + 'px;bottom:' + offsetY + 'px;display:flex;align-items:center;gap:9px;',
-    'border:0;cursor:pointer;border-radius:' + launcherRadius + 'px;height:54px;padding:0 24px;background:' + (design.bubble_color || primary) + ';',
+    'border:0;cursor:pointer;border-radius:' + launcherRadius + 'px;height:56px;padding:0 26px;background:' + (design.bubble_color || primary) + ';',
     'color:' + onPrimary + ';font:600 15px/1 ' + font + ';box-shadow:0 8px 22px rgba(15,23,42,.22);',
     'transition:transform .15s ease,box-shadow .15s ease}',
     '.launcher:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(15,23,42,.28)}',
-    '.launcher svg{width:22px;height:22px;fill:currentColor;flex:none}',
-    '.launcher.icon-only{padding:0;width:54px;justify-content:center}',
+    '.launcher svg{width:23px;height:23px;fill:currentColor;flex:none}',
+    '.launcher.icon-only{padding:0;width:56px;justify-content:center}',
     '.launcher .badge{position:absolute;top:-5px;' + (side === 'left' ? 'left' : 'right') + ':-5px;min-width:23px;height:23px;',
     'padding:0 6px;border-radius:999px;background:' + (design.badge_color || '#ef4444') + ';color:#fff;',
     'font:700 12px/23px ' + font + ';text-align:center;box-shadow:0 0 0 2px rgba(255,255,255,.92)}',
@@ -494,7 +494,7 @@
       case 'NotFoundError':
       case 'DevicesNotFoundError':
       case 'OverconstrainedError':
-        return 'No microphone was found. Plug one in, or check your system sound settings, then reload the page.';
+        return 'The browser cannot see a microphone. On Windows check Settings → Privacy → Microphone (allow desktop apps), then tap the mic again.';
       case 'NotReadableError':
       case 'TrackStartError':
         return 'The microphone is already in use by another app.';
@@ -566,17 +566,6 @@
       }
       showError(microphoneMessage(error));
     });
-  }
-
-  // A button that cannot possibly work is worse than no button.
-  if (micBtn && navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
-    navigator.mediaDevices.enumerateDevices().then(function (devices) {
-      var hasInput = devices.some(function (device) { return device.kind === 'audioinput'; });
-      if (!hasInput && micBtn && micBtn.parentNode) {
-        micBtn.parentNode.removeChild(micBtn);
-        micBtn = null;
-      }
-    }).catch(function () { /* keep the button and let the click report the reason */ });
   }
 
   if (micBtn) {
