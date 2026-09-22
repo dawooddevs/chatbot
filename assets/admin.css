@@ -64,8 +64,18 @@ a { color: var(--primary); }
 .card .hint { color: var(--muted); font-size: 13.5px; margin: 0 0 16px; }
 
 .grid { display: grid; gap: 18px; }
-.grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
 .grid.cols-4 { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+
+/* The website list needs room for its action buttons, so it only shares the
+   row with the create form on wide screens. */
+.sites-layout { display: grid; gap: 18px; grid-template-columns: 1fr; }
+@media (min-width: 1500px) {
+  .sites-layout { grid-template-columns: minmax(0, 2fr) minmax(340px, 1fr); align-items: start; }
+}
+.row-actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+.row-actions form { display: inline-flex; }
+td .mono { word-break: break-word; }
 
 .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
 .stat .label { color: var(--muted); font-size: 13px; }
@@ -103,8 +113,10 @@ input[type=color] { width: 54px; height: 38px; padding: 2px; border: 1px solid v
 .btn.secondary:hover { background: #f8fafc; }
 .btn.danger { background: var(--danger); }
 .btn.small { padding: 7px 11px; font-size: 13px; }
+.btn[hidden], [hidden] { display: none !important; }
 .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 11px 10px; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
 th { color: var(--muted); font-size: 12.5px; text-transform: uppercase; letter-spacing: .03em; }
@@ -142,6 +154,30 @@ tr:last-child td { border-bottom: 0; }
   font-weight: 600; font-size: 14px; border-bottom: 2px solid transparent;
 }
 .tabs a.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+.tab-panel { transition: opacity .15s ease; }
+.tab-panel.is-loading { opacity: .45; }
+.tab-panel.is-entering { animation: tab-in .22s ease both; }
+@keyframes tab-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tab-panel.is-entering { animation: none; }
+}
+
+.kb-summary { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; font-size: 13.5px; }
+
+.faq-card .faq-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.faq-item { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; background: #fff; }
+.faq-item.is-new { animation: tab-in .2s ease both; }
+.faq-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.faq-head .spacer { flex: 1; }
+.faq-question { font-size: 14.5px; }
+.faq-answer { font-size: 13.5px; margin-top: 6px; white-space: pre-wrap; }
+.faq-form { border-top: 1px solid var(--border); padding-top: 16px; }
+.faq-status { font-size: 13px; }
+.faq-status.error { color: var(--danger); }
 
 pre.code {
   background: #0f172a; color: #e2e8f0; padding: 14px 16px; border-radius: 10px;

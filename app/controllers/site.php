@@ -3,11 +3,12 @@ declare(strict_types=1);
 
 use App\Auth;
 use App\Database;
+use App\Faq;
 use App\KnowledgeBase;
-use App\Uploads;
 use App\OpenAi;
 use App\Session;
 use App\Site;
+use App\Uploads;
 use App\View;
 
 $userId = Auth::id();
@@ -137,8 +138,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-View::display('admin.site', [
-    'site' => Site::find($siteId, $userId),
-    'tab' => in_array($tab, ['general', 'design', 'ai', 'embed'], true) ? $tab : 'general',
-    'kbStats' => KnowledgeBase::stats($siteId),
+$tab = in_array($tab, ['general', 'design', 'ai', 'embed', 'knowledge'], true) ? $tab : 'general';
+$site = Site::find($siteId, $userId);
+
+$data = ['site' => $site, 'tab' => $tab];
+
+if ($tab === 'design') {
+    $data['faqs'] = Faq::forSite($siteId);
+}
+
+if ($tab === 'knowledge') {
+    $data['documents'] = Database::all('SELECT * FROM documents WHERE site_id = ? ORDER BY updated_at DESC', [$siteId]);
+    $data['stats'] = KnowledgeBase::stats($siteId);
+    $data['editing'] = query('edit')
+        ? Database::first('SELECT * FROM documents WHERE id = ? AND site_id = ?', [(int)query('edit'), $siteId])
+        : null;
+    $test = Session::get('kb_test');
+    Session::forget('kb_test');
+    $data['testResults'] = $test['results'] ?? null;
+    $data['testQuestion'] = $test['question'] ?? null;
+}
+
+$panel = View::render('admin.site.' . $tab, $data, null);
+
+// The tab strip fetches this same URL with partial=1 and swaps just the panel.
+if (query('partial') === '1') {
+    header('Content-Type: text/html; charset=utf-8');
+    echo $panel;
+    exit;
+}
+
+View::display('admin.site', $data + [
+    'panel' => $panel,
+    'kbStats' => $tab === 'knowledge' ? $data['stats'] : KnowledgeBase::stats($siteId),
 ]);

@@ -42,5 +42,6 @@ $nav = [
     <?= $content ?>
   </main>
 </div>
+<script src="<?= e(base_url('assets/admin.js')) ?>" defer></script>
 </body>
 </html>

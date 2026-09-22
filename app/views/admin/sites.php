@@ -10,14 +10,14 @@
   <div class="alert error"><?= e($error) ?></div>
 <?php endforeach; ?>
 
-<div class="grid cols-2">
+<div class="sites-layout">
   <div class="card">
     <h2>Your websites</h2>
     <p class="hint"><?= count($sites) ?> website(s).</p>
     <?php if (!$sites): ?>
       <div class="empty"><h3>Nothing here yet</h3><p>Create your first website with the form beside this panel.</p></div>
     <?php else: ?>
-      <table>
+      <div class="table-wrap"><table>
         <thead><tr><th>Website</th><th>Knowledge</th><th>Chats</th><th></th></tr></thead>
         <tbody>
         <?php foreach ($sites as $site): ?>
@@ -29,8 +29,9 @@
             </td>
             <td><?= (int)($counts[$site['id']]['documents'] ?? 0) ?> docs</td>
             <td><?= (int)($counts[$site['id']]['conversations'] ?? 0) ?></td>
-            <td class="right nowrap">
-              <a class="btn secondary small" href="<?= e(admin_url('knowledge', ['id' => $site['id']])) ?>">Knowledge</a>
+            <td class="right">
+              <div class="row-actions">
+              <a class="btn secondary small" href="<?= e(admin_url('site', ['id' => $site['id'], 'tab' => 'knowledge'])) ?>">Knowledge</a>
               <a class="btn secondary small" href="<?= e(admin_url('site', ['id' => $site['id']])) ?>">Manage</a>
               <form class="inline-form" method="post" action="<?= e(admin_url('sites')) ?>"
                     onsubmit="return confirm('Delete <?= e(addslashes($site['name'])) ?> and every document and conversation it has?');">
@@ -39,11 +40,12 @@
                 <input type="hidden" name="id" value="<?= (int)$site['id'] ?>">
                 <button class="btn danger small" type="submit">Delete</button>
               </form>
+              </div>
             </td>
           </tr>
         <?php endforeach; ?>
         </tbody>
-      </table>
+      </table></div>
     <?php endif; ?>
   </div>
 
@@ -54,7 +56,7 @@
       <?= Csrf::field() ?>
       <input type="hidden" name="action" value="create">
       <div class="field">
-        <label for="name">Website name</label>
+        <label for="name">Business Name</label>
         <input type="text" id="name" name="name" placeholder="Acme Ltd" required>
       </div>
       <div class="field">

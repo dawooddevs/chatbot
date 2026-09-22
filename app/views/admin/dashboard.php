@@ -45,7 +45,7 @@
         <a class="btn" href="<?= e(admin_url('sites')) ?>">Add website</a>
       </div>
     <?php else: ?>
-      <table>
+      <div class="table-wrap"><table>
         <tbody>
         <?php foreach ($sites as $site): ?>
           <tr>
@@ -60,7 +60,7 @@
           </tr>
         <?php endforeach; ?>
         </tbody>
-      </table>
+      </table></div>
     <?php endif; ?>
   </div>
 
@@ -70,7 +70,7 @@
     <?php if (!$recent): ?>
       <div class="empty"><p>No conversations yet. They appear here as soon as visitors start chatting.</p></div>
     <?php else: ?>
-      <table>
+      <div class="table-wrap"><table>
         <tbody>
         <?php foreach ($recent as $row): ?>
           <tr>
@@ -82,7 +82,7 @@
           </tr>
         <?php endforeach; ?>
         </tbody>
-      </table>
+      </table></div>
     <?php endif; ?>
   </div>
 </div>

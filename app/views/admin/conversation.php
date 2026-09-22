@@ -29,7 +29,7 @@
 
   <div class="card">
     <h2>Visitor</h2>
-    <table>
+    <div class="table-wrap"><table>
       <tbody>
         <tr><th>Page</th><td class="mono"><?= e((string)$conversation['page_url'] ?: '—') ?></td></tr>
         <tr><th>Referrer</th><td class="mono"><?= e((string)$conversation['referrer'] ?: '—') ?></td></tr>
@@ -38,7 +38,7 @@
         <tr><th>Started</th><td><?= e((string)$conversation['created_at']) ?></td></tr>
         <tr><th>Last activity</th><td><?= e((string)$conversation['last_activity_at']) ?></td></tr>
       </tbody>
-    </table>
+    </table></div>
     <p class="hint" style="margin-top:14px">IP addresses are stored only as a salted hash, used for rate limiting.</p>
   </div>
 </div>

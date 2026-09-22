@@ -11,7 +11,7 @@ use PDO;
 final class Schema
 {
     /** Bump whenever statements() changes, so deployed updates migrate themselves. */
-    public const VERSION = 2;
+    public const VERSION = 3;
 
     /**
      * Runs the migrations once per schema version. Called on admin requests so a
@@ -153,6 +153,19 @@ final class Schema
                 PRIMARY KEY (id),
                 KEY idx_messages_conversation (conversation_id, id),
                 KEY idx_messages_site (site_id, created_at)
+            ) $engine",
+
+            "CREATE TABLE IF NOT EXISTS faqs (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                site_id INT UNSIGNED NOT NULL,
+                question VARCHAR(255) NOT NULL,
+                answer MEDIUMTEXT NOT NULL,
+                position INT UNSIGNED NOT NULL DEFAULT 0,
+                show_as_chip TINYINT(1) NOT NULL DEFAULT 1,
+                created_at DATETIME NOT NULL,
+                updated_at DATETIME NOT NULL,
+                PRIMARY KEY (id),
+                KEY idx_faqs_site (site_id, position)
             ) $engine",
 
             "CREATE TABLE IF NOT EXISTS attachments (

@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/app/bootstrap.php';
 
+use App\Faq;
 use App\Site;
 
 header('Content-Type: application/javascript; charset=utf-8');
@@ -20,6 +21,11 @@ $site = $key !== '' ? Site::findByKey($key) : null;
 if (!$site || $site['status'] !== 'active') {
     echo "/* chatbot: unknown or paused site key */\n";
     exit;
+}
+
+$chips = Faq::chips((int)$site['id']);
+if ($chips !== []) {
+    $site['design']['suggestions'] = $chips;
 }
 
 $config = [

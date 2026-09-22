@@ -20,7 +20,7 @@
   <?php if (!$conversations): ?>
     <div class="empty"><h3>No conversations yet</h3><p>They appear here as soon as a visitor writes to one of your bots.</p></div>
   <?php else: ?>
-    <table>
+    <div class="table-wrap"><table>
       <thead><tr><th>Website</th><th>First question</th><th>Messages</th><th>Page</th><th>Last activity</th><th></th></tr></thead>
       <tbody>
       <?php foreach ($conversations as $conversation): ?>
@@ -42,7 +42,7 @@
         </tr>
       <?php endforeach; ?>
       </tbody>
-    </table>
+    </table></div>
 
     <?php if ($pages > 1): ?>
       <div class="actions" style="margin-top:16px">

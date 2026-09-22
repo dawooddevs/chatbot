@@ -7,7 +7,6 @@ use App\KnowledgeBase;
 use App\Scraper;
 use App\Session;
 use App\Site;
-use App\View;
 
 $userId = Auth::id();
 $siteId = (int)(query('id') ?? post('id') ?? 0);
@@ -18,12 +17,16 @@ if (!$site) {
     redirect(admin_url('sites'));
 }
 
-$testResults = null;
-$testQuestion = null;
+$back = admin_url('site', ['id' => $siteId, 'tab' => 'knowledge']);
+
+// Knowledge lives in the website's Knowledge base tab; this route only handles
+// the form posts behind it.
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    redirect($back);
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = post('action');
-    $back = admin_url('knowledge', ['id' => $siteId]);
 
     try {
         if ($action === 'save_text') {
@@ -100,32 +103,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($action === 'test') {
-            $testQuestion = (string)post('question', '');
-            $testResults = KnowledgeBase::search(
-                $site,
-                $testQuestion,
-                (int)$site['ai']['top_k'],
-                (float)$site['ai']['min_score']
-            );
+            $question = (string)post('question', '');
+            Session::set('kb_test', [
+                'question' => $question,
+                'results' => KnowledgeBase::search(
+                    $site,
+                    $question,
+                    (int)$site['ai']['top_k'],
+                    (float)$site['ai']['min_score']
+                ),
+            ]);
+            redirect($back);
         }
     } catch (Throwable $e) {
         Session::flash('error', $e->getMessage());
-        if ($action !== 'test') {
-            redirect($back);
-        }
+        redirect($back);
     }
 }
 
-$editing = null;
-if (query('edit')) {
-    $editing = Database::first('SELECT * FROM documents WHERE id = ? AND site_id = ?', [(int)query('edit'), $siteId]);
-}
-
-View::display('admin.knowledge', [
-    'site' => $site,
-    'documents' => Database::all('SELECT * FROM documents WHERE site_id = ? ORDER BY updated_at DESC', [$siteId]),
-    'stats' => KnowledgeBase::stats($siteId),
-    'editing' => $editing,
-    'testResults' => $testResults,
-    'testQuestion' => $testQuestion,
-]);
+redirect($back);

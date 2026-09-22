@@ -85,14 +85,14 @@ use App\OpenAi;
 
     <div class="card">
       <h2>Server</h2>
-      <table>
+      <div class="table-wrap"><table>
         <tbody>
           <tr><th>PHP</th><td><?= e(PHP_VERSION) ?></td></tr>
           <tr><th>cURL</th><td><?= function_exists('curl_init') ? 'available' : 'missing (using stream fallback)' ?></td></tr>
           <tr><th>Install path</th><td class="mono"><?= e(APP_ROOT) ?></td></tr>
           <tr><th>Base URL</th><td class="mono"><?= e(base_url()) ?></td></tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
   </div>
 </div>

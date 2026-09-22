@@ -8,21 +8,14 @@ $statusBadges = [
     'empty' => ['grey', 'empty'],
 ];
 ?>
-<div class="page-head">
-  <div>
-    <h1>Knowledge base</h1>
-    <p><?= e($site['name']) ?> · <?= (int)$stats['documents'] ?> documents · <?= (int)$stats['chunks'] ?> chunks
-      (<?= (int)$stats['embedded'] ?> with embeddings)</p>
-  </div>
-  <div class="actions">
-    <a class="btn secondary" href="<?= e(admin_url('site', ['id' => $site['id']])) ?>">Website settings</a>
-    <form class="inline-form" method="post" action="<?= e(admin_url('knowledge')) ?>">
-      <?= Csrf::field() ?>
-      <input type="hidden" name="action" value="reindex">
-      <input type="hidden" name="id" value="<?= (int)$site['id'] ?>">
-      <button class="btn secondary" type="submit">Re-index all</button>
-    </form>
-  </div>
+<div class="kb-summary muted"><?= (int)$stats['documents'] ?> documents · <?= (int)$stats['chunks'] ?> chunks
+  (<?= (int)$stats['embedded'] ?> with embeddings)
+  <form class="inline-form" method="post" action="<?= e(admin_url('knowledge')) ?>">
+    <?= Csrf::field() ?>
+    <input type="hidden" name="action" value="reindex">
+    <input type="hidden" name="id" value="<?= (int)$site['id'] ?>">
+    <button class="btn secondary small" type="submit">Re-index all</button>
+  </form>
 </div>
 
 <div class="grid cols-2">
@@ -46,7 +39,7 @@ $statusBadges = [
       <div class="actions">
         <button class="btn" type="submit"><?= $editing ? 'Save and re-index' : 'Save and index' ?></button>
         <?php if ($editing): ?>
-          <a class="btn secondary" href="<?= e(admin_url('knowledge', ['id' => $site['id']])) ?>">Cancel</a>
+          <a class="btn secondary" href="<?= e(admin_url('site', ['id' => $site['id'], 'tab' => 'knowledge'])) ?>">Cancel</a>
         <?php endif; ?>
       </div>
     </form>
@@ -86,7 +79,7 @@ $statusBadges = [
     <div class="card">
       <h2>Test retrieval</h2>
       <p class="hint">See which passages a visitor question would pull in.</p>
-      <form method="post" action="<?= e(admin_url('knowledge', ['id' => $site['id']])) ?>">
+      <form method="post" action="<?= e(admin_url('knowledge')) ?>">
         <?= Csrf::field() ?>
         <input type="hidden" name="action" value="test">
         <input type="hidden" name="id" value="<?= (int)$site['id'] ?>">
@@ -111,7 +104,7 @@ $statusBadges = [
               </tr>
             <?php endforeach; ?>
             </tbody>
-          </table>
+          </table></div>
         <?php endif; ?>
       <?php endif; ?>
     </div>
@@ -123,7 +116,7 @@ $statusBadges = [
   <?php if (!$documents): ?>
     <div class="empty"><h3>No documents yet</h3><p>Add text, import a page or upload a file to teach this chatbot.</p></div>
   <?php else: ?>
-    <table>
+    <div class="table-wrap"><table>
       <thead><tr><th>Title</th><th>Source</th><th>Status</th><th>Chunks</th><th>Updated</th><th></th></tr></thead>
       <tbody>
       <?php foreach ($documents as $document): ?>
@@ -143,7 +136,7 @@ $statusBadges = [
           <td><?= (int)$document['chunk_count'] ?></td>
           <td class="muted nowrap"><?= e(time_ago($document['updated_at'])) ?></td>
           <td class="right nowrap">
-            <a class="btn secondary small" href="<?= e(admin_url('knowledge', ['id' => $site['id'], 'edit' => $document['id']])) ?>">Edit</a>
+            <a class="btn secondary small" href="<?= e(admin_url('site', ['id' => $site['id'], 'tab' => 'knowledge', 'edit' => $document['id']])) ?>">Edit</a>
             <form class="inline-form" method="post" action="<?= e(admin_url('knowledge')) ?>">
               <?= Csrf::field() ?>
               <input type="hidden" name="action" value="reindex">
@@ -162,6 +155,6 @@ $statusBadges = [
         </tr>
       <?php endforeach; ?>
       </tbody>
-    </table>
+    </table></div>
   <?php endif; ?>
 </div>
