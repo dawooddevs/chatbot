@@ -16,7 +16,6 @@ use App\OpenAi;
 <div class="grid cols-2">
   <div class="card">
     <h2>OpenAI</h2>
-    <p class="hint">Your key is used for every chat reply and every knowledge-base embedding.</p>
 
     <?php if ($fromEnv): ?>
       <div class="alert info">A key is being supplied by the <span class="mono">OPENAI_API_KEY</span> environment variable, which overrides the one stored here.</div>
@@ -34,7 +33,7 @@ use App\OpenAi;
       <div class="field">
         <label for="openai_base_url">API base URL</label>
         <input type="text" id="openai_base_url" name="openai_base_url" value="<?= e((string)$baseUrl) ?>">
-        <div class="help">Only change this for an OpenAI-compatible proxy.</div>
+        <div class="help">For an OpenAI-compatible proxy.</div>
       </div>
       <div class="field">
         <label for="default_chat_model">Default model for new websites</label>
@@ -47,7 +46,6 @@ use App\OpenAi;
       <div class="field">
         <label for="platform_name">Platform name</label>
         <input type="text" id="platform_name" name="platform_name" value="<?= e((string)$platformName) ?>" maxlength="60">
-        <div class="help">Shown in the sidebar and browser tab.</div>
       </div>
       <button class="btn" type="submit">Save settings</button>
     </form>
@@ -56,7 +54,6 @@ use App\OpenAi;
   <div>
     <div class="card">
       <h2>Connection test</h2>
-      <p class="hint">Sends one tiny request to confirm the key, network access and model all work.</p>
       <form method="post" action="<?= e(admin_url('settings')) ?>">
         <?= Csrf::field() ?>
         <input type="hidden" name="action" value="test">
@@ -66,7 +63,6 @@ use App\OpenAi;
 
     <div class="card">
       <h2>Maintenance</h2>
-      <p class="hint">Housekeeping you can run at any time.</p>
       <div class="actions">
         <form method="post" action="<?= e(admin_url('settings')) ?>">
           <?= Csrf::field() ?>

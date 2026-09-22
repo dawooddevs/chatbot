@@ -13,7 +13,6 @@ $ai = $site['ai'];
     <div class="grid cols-2">
       <div class="card">
         <h2>Model</h2>
-        <p class="hint">These calls are billed to the OpenAI credits on your account.</p>
         <div class="field">
           <label for="model">Chat model</label>
           <select id="model" name="model">
@@ -29,7 +28,7 @@ $ai = $site['ai'];
               <option value="<?= e($value) ?>" <?= $ai['embedding_model'] === $value ? 'selected' : '' ?>><?= e($label) ?></option>
             <?php endforeach; ?>
           </select>
-          <div class="help">Changing this means re-indexing the knowledge base.</div>
+          <div class="help">Changing this needs a re-index.</div>
         </div>
         <div class="field">
           <label for="temperature">Creativity (0 = strict, 1.5 = loose)</label>
@@ -42,13 +41,11 @@ $ai = $site['ai'];
         <div class="field">
           <label for="rate_limit_per_hour">Messages per visitor per hour</label>
           <input type="number" min="5" max="1000" id="rate_limit_per_hour" name="rate_limit_per_hour" value="<?= (int)$ai['rate_limit_per_hour'] ?>">
-          <div class="help">Protects your credits from abuse.</div>
         </div>
       </div>
 
       <div class="card">
         <h2>Behaviour</h2>
-        <p class="hint">How the assistant talks and how much of the knowledge base it sees.</p>
         <div class="field">
           <label for="persona">Persona / system prompt</label>
           <textarea id="persona" name="persona" maxlength="1500"><?= e($ai['persona']) ?></textarea>
@@ -56,7 +53,7 @@ $ai = $site['ai'];
         <div class="field">
           <label for="fallback">Fallback message</label>
           <textarea id="fallback" name="fallback" maxlength="500"><?= e($ai['fallback']) ?></textarea>
-          <div class="help">Used when the answer is not in the knowledge base or OpenAI is unreachable.</div>
+          <div class="help">Used when nothing matches, or OpenAI is unreachable.</div>
         </div>
         <div class="field checkbox">
           <input type="checkbox" id="strict_knowledge" name="strict_knowledge" value="1" <?= $ai['strict_knowledge'] ? 'checked' : '' ?>>
@@ -69,7 +66,6 @@ $ai = $site['ai'];
         <div class="field">
           <label for="min_score">Minimum match score (0–0.9)</label>
           <input type="number" step="0.05" min="0" max="0.9" id="min_score" name="min_score" value="<?= e((string)$ai['min_score']) ?>">
-          <div class="help">Higher values keep weak matches out of the prompt.</div>
         </div>
         <div class="field">
           <label for="history_turns">Conversation turns remembered</label>

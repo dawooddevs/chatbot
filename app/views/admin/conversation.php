@@ -39,6 +39,6 @@
         <tr><th>Last activity</th><td><?= e((string)$conversation['last_activity_at']) ?></td></tr>
       </tbody>
     </table></div>
-    <p class="hint" style="margin-top:14px">IP addresses are stored only as a salted hash, used for rate limiting.</p>
+    <p class="hint" style="margin-top:14px">IP addresses are stored only as a salted hash.</p>
   </div>
 </div>

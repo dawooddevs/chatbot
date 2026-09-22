@@ -8,7 +8,7 @@ $ai = $site['ai'];
 ?>
   <div class="card" style="max-width:760px">
     <h2>Embed code</h2>
-    <p class="hint">Paste this once before <span class="mono">&lt;/head&gt;</span> (or before <span class="mono">&lt;/body&gt;</span>) on every page of the client website.</p>
+    <p class="hint">Paste before <span class="mono">&lt;/head&gt;</span> on every page of the client site.</p>
     <pre class="code" id="embed-code"><?= e(Site::embedCode($site)) ?></pre>
     <div class="actions" style="margin-top:14px">
       <button class="btn" type="button" data-copy-embed>Copy code</button>
@@ -16,7 +16,7 @@ $ai = $site['ai'];
     </div>
 
     <h2 style="margin-top:26px">WordPress</h2>
-    <p class="hint">Appearance → Theme File Editor → <span class="mono">header.php</span>, or any "header scripts" plugin. Paste the same snippet.</p>
+    <p class="hint">Appearance → Theme File Editor → <span class="mono">header.php</span>, or a header-scripts plugin.</p>
 
     <h2 style="margin-top:26px">Control it from your own page</h2>
     <pre class="code">Chatbot.open();   // open the window
@@ -25,7 +25,7 @@ Chatbot.send('Do you ship to Germany?');
 Chatbot.reset();  // clear this visitor's history</pre>
 
     <h2 style="margin-top:26px">Site key</h2>
-    <p class="hint">The key identifies this website. Regenerating it immediately disables the old embed code.</p>
+    <p class="hint">Regenerating disables the current embed code.</p>
     <p class="mono"><?= e($site['site_key']) ?></p>
     <form method="post" action="<?= e(admin_url('site')) ?>" onsubmit="return confirm('Generate a new key? The current embed code will stop working until you replace it.');">
       <?= Csrf::field() ?>

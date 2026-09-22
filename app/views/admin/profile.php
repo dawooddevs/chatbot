@@ -17,7 +17,6 @@
 <div class="grid cols-2">
   <div class="card">
     <h2>Change password</h2>
-    <p class="hint">At least 10 characters. Use something unique to this panel.</p>
     <form method="post" action="<?= e(admin_url('profile')) ?>">
       <?= Csrf::field() ?>
       <input type="hidden" name="action" value="password">
@@ -39,7 +38,6 @@
 
   <div class="card">
     <h2>Account details</h2>
-    <p class="hint">The email is only used for your own reference.</p>
     <form method="post" action="<?= e(admin_url('profile')) ?>">
       <?= Csrf::field() ?>
       <input type="hidden" name="action" value="account">

@@ -22,7 +22,7 @@
 </div>
 <div class="page">
   <h1>A sample client page</h1>
-  <p>This stand-in page exists only so you can see the widget exactly as a visitor will. Open the bubble and ask something from the knowledge base.</p>
+  <p>A stand-in page for trying the widget as a visitor would.</p>
   <div class="block">
     <h2>Tips</h2>
     <ul>

@@ -2,7 +2,6 @@
 <div class="page-head">
   <div>
     <h1>Conversations</h1>
-    <p>Every chat your bots have had, newest first.</p>
   </div>
   <form method="get" action="<?= e(base_url('index.php')) ?>" class="actions">
     <input type="hidden" name="r" value="conversations">
@@ -18,7 +17,7 @@
 
 <div class="card">
   <?php if (!$conversations): ?>
-    <div class="empty"><h3>No conversations yet</h3><p>They appear here as soon as a visitor writes to one of your bots.</p></div>
+    <div class="empty"><h3>No conversations yet</h3></div>
   <?php else: ?>
     <div class="table-wrap"><table>
       <thead><tr><th>Website</th><th>First question</th><th>Messages</th><th>Page</th><th>Last activity</th><th></th></tr></thead>

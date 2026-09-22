@@ -143,12 +143,14 @@ $site = Site::find($siteId, $userId);
 
 $data = ['site' => $site, 'tab' => $tab];
 
-if ($tab === 'design') {
-    $data['faqs'] = Faq::forSite($siteId);
-}
-
 if ($tab === 'knowledge') {
-    $data['documents'] = Database::all('SELECT * FROM documents WHERE site_id = ? ORDER BY updated_at DESC', [$siteId]);
+    $data['faqs'] = Faq::forSite($siteId);
+    // The FAQ document is generated from the list above it, so it is not
+    // offered for editing here.
+    $data['documents'] = Database::all(
+        "SELECT * FROM documents WHERE site_id = ? AND source_type <> 'faq' ORDER BY updated_at DESC",
+        [$siteId]
+    );
     $data['stats'] = KnowledgeBase::stats($siteId);
     $data['editing'] = query('edit')
         ? Database::first('SELECT * FROM documents WHERE id = ? AND site_id = ?', [(int)query('edit'), $siteId])

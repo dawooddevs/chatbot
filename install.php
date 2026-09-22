@@ -203,7 +203,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$alreadyInstalled) {
         <div class="field">
           <label for="base_url">Public URL</label>
           <input type="text" id="base_url" name="base_url" value="<?= e((string)post('base_url', $guessedBase)) ?>">
-          <div class="help">Used to build the embed code, so it must be the address your clients can reach.</div>
+          <div class="help">Used to build the embed code.</div>
         </div>
 
         <h2 style="font-size:16px;margin-top:22px">Admin account</h2>

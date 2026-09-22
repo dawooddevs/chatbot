@@ -13,7 +13,6 @@ $ai = $site['ai'];
     <div class="grid cols-2">
       <div class="card">
         <h2>Wording</h2>
-        <p class="hint">What visitors read inside the chat window.</p>
         <div class="field">
           <label for="title">Header title</label>
           <input type="text" id="title" name="title" value="<?= e($design['title']) ?>" maxlength="60">
@@ -22,7 +21,6 @@ $ai = $site['ai'];
           <label for="subtitle">Status line</label>
           <input type="text" id="subtitle" name="subtitle" value="<?= e($design['subtitle']) ?>" maxlength="80"
                  placeholder="Typically replies in a few seconds">
-          <div class="help">Sits under the title in the header, next to the green dot.</div>
         </div>
         <div class="field">
           <label for="welcome_message">Welcome message</label>
@@ -39,7 +37,7 @@ $ai = $site['ai'];
         <div class="field">
           <label for="launcher_badge">Launcher badge number</label>
           <input type="number" id="launcher_badge" name="launcher_badge" min="0" max="99" value="<?= (int)$design['launcher_badge'] ?>">
-          <div class="help">The small red count on the bubble. 0 hides it; it disappears once the visitor opens the chat.</div>
+          <div class="help">0 hides it. Clears when the chat is opened.</div>
         </div>
         <div class="field">
           <label for="badge_color">Badge colour</label>
@@ -51,7 +49,6 @@ $ai = $site['ai'];
         <div class="field">
           <label for="launcher_radius">Launcher corner radius</label>
           <input type="number" id="launcher_radius" name="launcher_radius" min="8" max="27" value="<?= (int)$design['launcher_radius'] ?>">
-          <div class="help">27 is a full pill; lower values square the bubble off.</div>
         </div>
         <div class="field">
           <label for="launcher_icon">Launcher icon</label>
@@ -65,7 +62,6 @@ $ai = $site['ai'];
 
       <div class="card">
         <h2>Look &amp; feel</h2>
-        <p class="hint">Colours, placement and behaviour on the client site.</p>
         <?php
         $colors = [
           'primary_color' => 'Header / primary colour',
@@ -134,12 +130,11 @@ $ai = $site['ai'];
             </div>
           <?php endif; ?>
           <input type="file" name="avatar_file" accept=".png,.jpg,.jpeg,.gif,.webp,.svg">
-          <div class="help">PNG, JPG, GIF, WEBP or SVG, up to 2 MB. Square images look best.</div>
+          <div class="help">PNG, JPG, GIF, WEBP or SVG · 2 MB max.</div>
         </div>
         <div class="field">
           <label for="avatar_url">…or an image URL</label>
           <input type="url" id="avatar_url" name="avatar_url" value="<?= e($design['avatar_url']) ?>" placeholder="https://acme.com/logo.png">
-          <div class="help">An uploaded image replaces whatever is here.</div>
         </div>
         <div class="field checkbox">
           <input type="checkbox" id="auto_open" name="auto_open" value="1" <?= $design['auto_open'] ? 'checked' : '' ?>>
@@ -176,46 +171,3 @@ $ai = $site['ai'];
       <a class="btn secondary" target="_blank" rel="noopener" href="<?= e(admin_url('preview', ['id' => $site['id']])) ?>">Open preview</a>
     </div>
   </form>
-
-    <div class="card faq-card" data-faq-site="<?= (int)$site['id'] ?>">
-      <h2>FAQs</h2>
-      <p class="hint">Answers the bot knows by heart. The first <?= App\Faq::MAX_CHIPS ?> marked as chips are
-        offered as tappable questions in the chat, and every FAQ is indexed into the knowledge base.</p>
-
-      <div class="faq-list" id="faq-list">
-        <?php foreach ($faqs as $faq): ?>
-          <div class="faq-item" data-faq-id="<?= (int)$faq['id'] ?>">
-            <div class="faq-head">
-              <strong class="faq-question"><?= e($faq['question']) ?></strong>
-              <?php if ((int)$faq['show_as_chip'] === 1): ?><span class="badge">chip</span><?php endif; ?>
-              <span class="spacer"></span>
-              <button type="button" class="btn secondary small" data-faq-edit>Edit</button>
-              <button type="button" class="btn danger small" data-faq-delete>Delete</button>
-            </div>
-            <div class="faq-answer muted"><?= nl2br(e($faq['answer'])) ?></div>
-          </div>
-        <?php endforeach; ?>
-      </div>
-      <p class="muted faq-empty" <?= $faqs ? 'hidden' : '' ?>>No FAQs yet. Add the questions customers ask most.</p>
-
-      <form class="faq-form" id="faq-form">
-        <input type="hidden" name="faq_id" value="">
-        <div class="field">
-          <label for="faq-question">Question</label>
-          <input type="text" id="faq-question" name="question" maxlength="255" placeholder="Do you ship internationally?" required>
-        </div>
-        <div class="field">
-          <label for="faq-answer">Answer</label>
-          <textarea id="faq-answer" name="answer" rows="3" placeholder="Yes - worldwide, usually within three working days." required></textarea>
-        </div>
-        <div class="field checkbox">
-          <input type="checkbox" id="faq-chip" name="show_as_chip" value="1" checked>
-          <label for="faq-chip" style="margin:0">Offer this question as a chip in the chat</label>
-        </div>
-        <div class="actions">
-          <button class="btn" type="submit" data-faq-submit>Add FAQ</button>
-          <button class="btn secondary" type="button" data-faq-cancel hidden>Cancel</button>
-          <span class="faq-status muted"></span>
-        </div>
-      </form>
-    </div>

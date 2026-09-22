@@ -8,7 +8,6 @@ $ai = $site['ai'];
 ?>
   <div class="card" style="max-width:640px">
     <h2>General</h2>
-    <p class="hint">Basic details and where the widget is allowed to run.</p>
     <form method="post" action="<?= e(admin_url('site')) ?>">
       <?= Csrf::field() ?>
       <input type="hidden" name="action" value="save_general">
@@ -20,7 +19,7 @@ $ai = $site['ai'];
       <div class="field">
         <label for="allowed_domains">Allowed domains</label>
         <textarea id="allowed_domains" name="allowed_domains"><?= e(implode("\n", $site['domains'])) ?></textarea>
-        <div class="help">One per line, e.g. <span class="mono">acme.com</span>. Subdomains are included. Empty means any domain may embed this bot.</div>
+        <div class="help">One per line, subdomains included. Empty allows any domain.</div>
       </div>
       <div class="field">
         <label for="status">Status</label>

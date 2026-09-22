@@ -15,7 +15,6 @@
 <div class="page-head">
   <div>
     <h1>Dashboard</h1>
-    <p>An overview of your chatbots and recent visitor activity.</p>
   </div>
   <a class="btn" href="<?= e(admin_url('sites')) ?>">+ Add website</a>
 </div>
@@ -37,11 +36,9 @@
 <div class="grid cols-2">
   <div class="card">
     <h2>Your websites</h2>
-    <p class="hint">Each website has its own knowledge base, design and embed code.</p>
     <?php if (!$sites): ?>
       <div class="empty">
         <h3>No websites yet</h3>
-        <p>Add your first website to generate an embed code.</p>
         <a class="btn" href="<?= e(admin_url('sites')) ?>">Add website</a>
       </div>
     <?php else: ?>
@@ -66,9 +63,8 @@
 
   <div class="card">
     <h2>Recent conversations</h2>
-    <p class="hint">The latest visitor chats across all of your websites.</p>
     <?php if (!$recent): ?>
-      <div class="empty"><p>No conversations yet. They appear here as soon as visitors start chatting.</p></div>
+      <div class="empty"><p>No conversations yet.</p></div>
     <?php else: ?>
       <div class="table-wrap"><table>
         <tbody>
