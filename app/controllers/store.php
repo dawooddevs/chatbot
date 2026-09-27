@@ -45,8 +45,9 @@ try {
 
         case 'finish':
             $completed = array_values(array_intersect(StoreSync::PHASES, (array)($_POST['completed'] ?? [])));
-            $stats = StoreSync::finish(Site::find((int)$site['id']) ?? $site, (string)post('token', ''), $completed);
-            json_out(['ok' => true, 'stats' => $stats]);
+            $notes = array_map('strval', (array)($_POST['notes'] ?? []));
+            $stats = StoreSync::finish(Site::find((int)$site['id']) ?? $site, (string)post('token', ''), $completed, $notes);
+            json_out(['ok' => true, 'stats' => $stats, 'synced' => $completed !== []]);
 
         case 'fail':
             StoreSync::fail($site, (string)post('message', 'Sync stopped.'));

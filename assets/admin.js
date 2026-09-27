@@ -678,19 +678,25 @@
     };
     var token;
     var completed = [];
+    var warnings = [];
 
     ui.button.disabled = true;
     ui.button.classList.add('is-busy');
     ui.button.textContent = 'Syncing…';
-    if (ui.error) {
-      ui.error.remove();
-    }
+    ui.card.querySelectorAll('.sync-error').forEach(function (node) { node.remove(); });
     progressStart();
 
+    // Resolves true when the phase ran to its last page, false when the site
+    // refused it - the other phases still run.
     function runPhase(phase, page) {
       return storeRequest(siteId, { action: 'step', token: token, phase: phase, page: page }).then(function (result) {
+        if (result.skipped) {
+          warnings.push(result.reason);
+          toast('warning', result.reason);
+          return false;
+        }
         showProgress(phase, result.page, result.total_pages, result.total);
-        return result.next_page ? runPhase(phase, result.next_page) : null;
+        return result.next_page ? runPhase(phase, result.next_page) : true;
       });
     }
 
@@ -701,24 +707,41 @@
         return start.phases.reduce(function (chain, phase) {
           return chain.then(function () {
             showProgress(phase, 0, 1, 0);
-            return runPhase(phase, 1).then(function () { completed.push(phase); });
+            return runPhase(phase, 1).then(function (finished) {
+              if (finished) {
+                completed.push(phase);
+              }
+            });
           });
         }, Promise.resolve());
       })
       .then(function () {
-        return storeRequest(siteId, { action: 'finish', token: token, completed: completed });
+        return storeRequest(siteId, { action: 'finish', token: token, completed: completed, notes: warnings });
       })
       .then(function (done) {
         var stats = done.stats;
         var live = syncUi();
         if (live) {
-          live.status.textContent = 'Last sync just now · ' + stats.products.toLocaleString() + ' products · ' +
-            stats.pages.toLocaleString() + ' pages · ' + stats.posts.toLocaleString() + ' posts';
-          live.label.textContent = 'Done';
+          if (done.synced) {
+            live.status.textContent = 'Last sync just now · ' + stats.products.toLocaleString() + ' products · ' +
+              stats.pages.toLocaleString() + ' pages · ' + stats.posts.toLocaleString() + ' posts';
+          }
+          live.label.textContent = !done.synced ? 'Nothing synced'
+            : (warnings.length ? 'Done, with ' + warnings.length + ' skipped' : 'Done');
           live.bar.style.width = '100%';
+          var anchor = live.status;
+          warnings.forEach(function (reason) {
+            var line = document.createElement('p');
+            line.className = 'sync-error';
+            line.textContent = reason;
+            anchor.after(line);
+            anchor = line;
+          });
         }
-        toast('success', 'Sync complete: ' + stats.products.toLocaleString() + ' products, ' +
-          stats.pages + ' pages, ' + stats.posts + ' posts.');
+        if (completed.length) {
+          toast('success', 'Sync complete: ' + stats.products.toLocaleString() + ' products, ' +
+            stats.pages + ' pages, ' + stats.posts + ' posts.');
+        }
         loadProducts('');
       })
       .catch(function (error) {
@@ -728,6 +751,7 @@
         }
         var live = syncUi();
         if (live) {
+          live.label.textContent = 'Stopped';
           var line = document.createElement('p');
           line.className = 'sync-error';
           line.textContent = error.message;

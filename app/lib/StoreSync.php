@@ -17,6 +17,18 @@ final class StoreSync
     public const PHASES = ['pages', 'posts', 'products'];
 
     private const PER_PAGE = ['pages' => 10, 'posts' => 10, 'products' => 100];
+    /** Pages fetched as HTML per step when the REST API is closed. */
+    private const SITEMAP_BATCH = 5;
+    private const MAX_SITEMAP_URLS = 400;
+
+    /**
+     * Firewalls and security plugins routinely refuse requests that announce
+     * themselves as scripts, so the sync asks the way a browser would.
+     */
+    private const BROWSER_HEADERS = [
+        'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+        'Accept-Language' => 'en-US,en;q=0.9',
+    ];
     private const DOC_TYPES = ['pages' => 'wp_page', 'posts' => 'wp_post'];
 
     public const DEFAULTS = [
@@ -88,17 +100,45 @@ final class StoreSync
         }
 
         $page = max(1, $page);
-        $perPage = self::PER_PAGE[$phase];
-        $endpoint = $phase === 'products'
-            ? '/wp-json/wc/store/v1/products?per_page=' . $perPage . '&page=' . $page
-            : '/wp-json/wp/v2/' . $phase . '?per_page=' . $perPage . '&page=' . $page
-                . '&status=publish&_fields=id,title,link,content';
 
-        [$items, $totalPages, $total] = self::fetchJson($settings['url'] . $endpoint);
-
-        $processed = $phase === 'products'
-            ? self::upsertProducts((int)$site['id'], $items, $token)
-            : self::upsertDocuments($site, $items, self::DOC_TYPES[$phase], $token);
+        if ($phase === 'products') {
+            try {
+                [$items, $totalPages, $total] = self::fetchJson(
+                    $settings['url'] . '/wp-json/wc/store/v1/products?per_page=' . self::PER_PAGE['products'] . '&page=' . $page
+                );
+            } catch (SyncBlockedException $e) {
+                return self::skipped($phase, 'Products: ' . $e->getMessage() . ' Use Import CSV instead.');
+            }
+            $processed = self::upsertProducts((int)$site['id'], $items, $token);
+        } else {
+            $cached = self::cachedUrls($token, $phase);
+            if ($cached === null) {
+                try {
+                    [$items, $totalPages, $total] = self::fetchJson(
+                        $settings['url'] . '/wp-json/wp/v2/' . $phase . '?per_page=' . self::PER_PAGE[$phase]
+                            . '&page=' . $page . '&status=publish&_fields=id,title,link,content'
+                    );
+                    $processed = self::upsertDocuments($site, $items, self::DOC_TYPES[$phase], $token);
+                } catch (SyncBlockedException $e) {
+                    if ($page > 1) {
+                        throw $e;
+                    }
+                    // The REST API is closed; read the public pages listed in the sitemap.
+                    $urls = self::sitemapUrls($settings['url'], $phase);
+                    if ($urls === []) {
+                        return self::skipped($phase, ucfirst($phase) . ': ' . $e->getMessage() . ' No sitemap to read them from either.');
+                    }
+                    self::cacheUrls($token, $phase, $urls);
+                    $cached = $urls;
+                }
+            }
+            if ($cached !== null) {
+                $batch = array_slice($cached, ($page - 1) * self::SITEMAP_BATCH, self::SITEMAP_BATCH);
+                $processed = self::upsertDocuments($site, self::fetchPages($batch), self::DOC_TYPES[$phase], $token);
+                $total = count($cached);
+                $totalPages = (int)ceil($total / self::SITEMAP_BATCH);
+            }
+        }
 
         return [
             'phase' => $phase,
@@ -114,8 +154,9 @@ final class StoreSync
      * Removes what the finished phases no longer contain and records totals.
      *
      * @param string[] $completed phases that ran to their last page
+     * @param string[] $notes reasons for any phase the site refused
      */
-    public static function finish(array $site, string $token, array $completed): array
+    public static function finish(array $site, string $token, array $completed, array $notes = []): array
     {
         $siteId = (int)$site['id'];
 
@@ -139,9 +180,18 @@ final class StoreSync
             }
         }
 
+        foreach (self::PHASES as $phase) {
+            @unlink(self::cacheFile($token, $phase));
+        }
+
         $settings = self::settings($site);
-        $settings['last_sync_at'] = date('c');
-        $settings['last_error'] = null;
+        // A run where the site refused everything is not a sync; keep the
+        // previous date so the panel does not claim fresh data.
+        if ($completed !== []) {
+            $settings['last_sync_at'] = date('c');
+        }
+        $notes = array_values(array_filter(array_map('strval', $notes)));
+        $settings['last_error'] = $notes !== [] ? mb_substr(implode(' ', $notes), 0, 600) : null;
         $settings['stats'] = self::stats($siteId);
         self::saveSettings($siteId, $settings);
 
@@ -172,18 +222,32 @@ final class StoreSync
         $settings = self::settings($site);
         $token = self::newToken();
         $completed = [];
+        $notes = [];
 
         foreach (self::phases($settings) as $phase) {
             $page = 1;
+            $skipped = false;
             do {
                 $result = self::step($site, $token, $phase, $page);
+                if (!empty($result['skipped'])) {
+                    $log('skipped - ' . $result['reason']);
+                    $notes[] = $result['reason'];
+                    $skipped = true;
+                    break;
+                }
                 $log(sprintf('%s: page %d/%d, %d items', $phase, $result['page'], max(1, $result['total_pages']), $result['processed']));
                 $page = $result['next_page'];
             } while ($page !== null);
-            $completed[] = $phase;
+            if (!$skipped) {
+                $completed[] = $phase;
+            }
         }
 
-        return self::finish($site, $token, $completed);
+        $stats = self::finish($site, $token, $completed, $notes);
+        if ($completed === []) {
+            throw new \RuntimeException('Nothing could be synced. ' . implode(' ', $notes));
+        }
+        return $stats;
     }
 
     /**
@@ -191,14 +255,16 @@ final class StoreSync
      */
     private static function fetchJson(string $url): array
     {
-        $response = Http::request('GET', $url, ['Accept' => 'application/json'], null, 45);
+        $response = Http::request('GET', $url, ['Accept' => 'application/json'] + self::BROWSER_HEADERS, null, 45);
 
         // WordPress answers 400 for a page past the end; treat that as empty.
         if ($response['status'] === 400 && str_contains($response['body'], 'invalid_page_number')) {
             return [[], 0, 0];
         }
-        if ($response['status'] === 404) {
-            throw new \RuntimeException('That site does not expose ' . (str_contains($url, '/wc/') ? 'the WooCommerce Store API' : 'the WordPress REST API') . ' (HTTP 404).');
+        if (in_array($response['status'], [401, 403, 404], true)) {
+            throw new SyncBlockedException($response['status'] === 404
+                ? 'the site does not expose this API (HTTP 404).'
+                : 'the site refused access (HTTP ' . $response['status'] . '), usually a security plugin or firewall.');
         }
         if ($response['status'] >= 400) {
             throw new \RuntimeException('The site answered HTTP ' . $response['status'] . '. A security plugin or firewall may be blocking API access.');
@@ -373,6 +439,117 @@ final class StoreSync
         }
 
         return $count;
+    }
+
+    private static function skipped(string $phase, string $reason): array
+    {
+        return [
+            'phase' => $phase,
+            'page' => 1,
+            'total_pages' => 0,
+            'total' => 0,
+            'processed' => 0,
+            'next_page' => null,
+            'skipped' => true,
+            'reason' => $reason,
+        ];
+    }
+
+    /**
+     * Page or post addresses from the WordPress core sitemap, or from Yoast /
+     * Rank Math, skipping shop, account and archive pages.
+     *
+     * @return string[]
+     */
+    private static function sitemapUrls(string $base, string $phase): array
+    {
+        $want = $phase === 'pages' ? '#(posts-page-|page-sitemap)#i' : '#(posts-post-|post-sitemap)#i';
+
+        foreach (['/wp-sitemap.xml', '/sitemap_index.xml', '/sitemap.xml'] as $path) {
+            $xml = self::fetchText($base . $path);
+            if ($xml === null || !str_contains($xml, '<loc>')) {
+                continue;
+            }
+            $locs = self::locs($xml);
+            $urls = [];
+            if (stripos($xml, '<sitemapindex') !== false) {
+                foreach (array_slice(array_values(array_filter($locs, static fn (string $u): bool => (bool)preg_match($want, $u))), 0, 10) as $child) {
+                    $childXml = self::fetchText($child);
+                    if ($childXml !== null) {
+                        $urls = array_merge($urls, self::locs($childXml));
+                    }
+                }
+            } elseif ($phase === 'pages') {
+                $urls = $locs; // a flat sitemap: take it for pages only
+            }
+
+            $urls = array_values(array_unique(array_filter($urls, static function (string $url): bool {
+                return !preg_match('#/(product|product-category|product-tag|category|tag|author|cart|checkout|my-account|wishlist)(/|$)#i', (string)parse_url($url, PHP_URL_PATH));
+            })));
+            if ($urls !== []) {
+                return array_slice($urls, 0, self::MAX_SITEMAP_URLS);
+            }
+        }
+        return [];
+    }
+
+    /** @return string[] */
+    private static function locs(string $xml): array
+    {
+        preg_match_all('#<loc>\s*(.*?)\s*</loc>#is', $xml, $m);
+        return array_map(static fn (string $u): string => html_entity_decode(trim($u), ENT_QUOTES | ENT_XML1, 'UTF-8'), $m[1]);
+    }
+
+    /** Fetches public pages and shapes them like REST API items. */
+    private static function fetchPages(array $urls): array
+    {
+        $items = [];
+        foreach ($urls as $url) {
+            $html = self::fetchText($url, 'text/html,application/xhtml+xml');
+            if ($html === null) {
+                continue;
+            }
+            $items[] = [
+                'link' => $url,
+                'title' => ['rendered' => Scraper::extractTitle($html)],
+                'content' => ['rendered' => Scraper::mainContent($html)],
+            ];
+        }
+        return $items;
+    }
+
+    private static function fetchText(string $url, string $accept = 'application/xml,text/xml,*/*'): ?string
+    {
+        try {
+            $response = Http::request('GET', $url, ['Accept' => $accept] + self::BROWSER_HEADERS, null, 30);
+        } catch (\Throwable $e) {
+            return null;
+        }
+        return $response['status'] === 200 ? $response['body'] : null;
+    }
+
+    private static function cacheFile(string $token, string $phase): string
+    {
+        return APP_ROOT . '/storage/cache/sync-' . preg_replace('/[^a-f0-9]/', '', $token) . '-' . $phase . '.json';
+    }
+
+    private static function cachedUrls(string $token, string $phase): ?array
+    {
+        $file = self::cacheFile($token, $phase);
+        if (!is_file($file)) {
+            return null;
+        }
+        $urls = json_decode((string)file_get_contents($file), true);
+        return is_array($urls) ? $urls : null;
+    }
+
+    private static function cacheUrls(string $token, string $phase, array $urls): void
+    {
+        $directory = APP_ROOT . '/storage/cache';
+        if (!is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+        file_put_contents(self::cacheFile($token, $phase), json_encode(array_values($urls)));
     }
 
     private static function plain(string $html): string

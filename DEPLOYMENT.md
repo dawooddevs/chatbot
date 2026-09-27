@@ -105,7 +105,13 @@ one to three minutes.
 - Products go into their own catalogue, searched by the chat whenever a visitor
   asks about products, prices or stock. Products removed from the shop disappear
   on the next full sync.
-- If the API is blocked (security plugin, firewall), export from
+- Security plugins often close the WordPress page/post API to visitors while
+  leaving the product API open. The sync then reads pages and posts from the
+  site's sitemap instead, and a part the site refuses is skipped with the
+  reason shown rather than stopping the others.
+- If the whole site refuses the chatbot server (a firewall blocking its IP),
+  allow the server's IP (cPanel home page → *Shared IP Address*) in that
+  firewall, or export from
   WooCommerce → Products → Export and use **Import CSV** instead. The export has
   no product URLs, so those products link to a store search for their name.
 

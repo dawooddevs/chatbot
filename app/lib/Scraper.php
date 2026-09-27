@@ -66,6 +66,24 @@ final class Scraper
         return '';
     }
 
+    /**
+     * The part of a page worth reading: <main> or <article> when the theme has
+     * one, otherwise the body without its header, footer, menus and sidebars.
+     */
+    public static function mainContent(string $html): string
+    {
+        $html = preg_replace('#<(script|style|noscript|svg|iframe|template)\b[^>]*>.*?</\1>#is', ' ', $html) ?? $html;
+        foreach (['main', 'article'] as $tag) {
+            if (preg_match('#<' . $tag . '\b[^>]*>(.*)</' . $tag . '>#is', $html, $m)) {
+                return $m[1];
+            }
+        }
+        if (preg_match('#<body\b[^>]*>(.*)</body>#is', $html, $m)) {
+            $html = $m[1];
+        }
+        return preg_replace('#<(header|footer|nav|aside)\b[^>]*>.*?</\1>#is', ' ', $html) ?? $html;
+    }
+
     public static function htmlToText(string $html): string
     {
         $html = preg_replace('#<(script|style|noscript|svg|iframe)[^>]*>.*?</\1>#is', ' ', $html) ?? $html;
