@@ -30,7 +30,10 @@
     mic: '<path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11h-2Z"/>',
     stop: '<rect x="7" y="7" width="10" height="10" rx="2"/>',
     file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm0 2.5L17.5 8H14V4.5Z"/>',
-    user: '<path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-3.3 0-8 1.7-8 4.5V21h16v-2.5c0-2.8-4.7-4.5-8-4.5Z"/>'
+    user: '<path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-3.3 0-8 1.7-8 4.5V21h16v-2.5c0-2.8-4.7-4.5-8-4.5Z"/>',
+    external: '<path d="M14 3h7v7h-2V6.4l-9.3 9.3-1.4-1.4L17.6 5H14V3ZM5 5h6v2H5v12h12v-6h2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"/>',
+    arrow: '<path d="M13.2 5.3 20 12l-6.8 6.7-1.4-1.4 4.3-4.3H4v-2h12.1l-4.3-4.3 1.4-1.4Z"/>',
+    bag: '<path d="M7 7V6a5 5 0 0 1 10 0v1h3l-1 14H5L4 7h3Zm2 0h6V6a3 3 0 0 0-6 0v1Z"/>'
   };
 
   function readStore() {
@@ -119,7 +122,41 @@
     '.msg{max-width:86%;padding:11px 15px;border-radius:16px;white-space:pre-wrap;word-wrap:break-word;font-size:14.5px}',
     '.msg.bot{background:' + agentBubble + ';color:' + textColor + ';border-bottom-left-radius:6px;align-self:flex-start}',
     '.msg.user{background:' + userBubble + ';color:' + onPrimary + ';border-bottom-right-radius:6px;align-self:flex-end}',
-    '.msg a{color:inherit;text-decoration:underline}',
+    '.msg a{color:inherit;text-decoration:underline;text-underline-offset:2px}',
+    '.msg strong{font-weight:700}',
+
+    /* link buttons under a reply */
+    '.actions{display:flex;flex-wrap:wrap;gap:6px;align-self:flex-start;max-width:92%;margin-top:-2px}',
+    '.action{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;',
+    'border:1px solid ' + borderColor + ';background:' + surface + ';color:' + primary + ';font-size:13px;font-weight:600;',
+    'text-decoration:none;transition:border-color .15s ease,background .15s ease,transform .15s ease}',
+    '.action:hover{border-color:' + primary + ';background:' + hexToRgba(primary, .06) + ';transform:translateY(-1px)}',
+    '.action svg{width:12px;height:12px;fill:currentColor;flex:none}',
+
+    /* product cards under a reply */
+    '.cards{display:flex;flex-direction:column;gap:8px;align-self:stretch;max-width:94%}',
+    '.pcard{display:flex;align-items:center;gap:12px;padding:10px;border:1px solid ' + borderColor + ';border-radius:14px;',
+    'background:' + surface + ';box-shadow:0 1px 2px rgba(15,23,42,.05),0 4px 14px rgba(15,23,42,.05);',
+    'animation:card-in .32s cubic-bezier(.2,.7,.2,1) both}',
+    '.pcard:nth-child(2){animation-delay:.06s}.pcard:nth-child(3){animation-delay:.12s}.pcard:nth-child(4){animation-delay:.18s}',
+    '@keyframes card-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}',
+    '.pcard .thumb{width:54px;height:54px;border-radius:10px;flex:none;object-fit:cover;background:' + agentBubble + ';',
+    'display:flex;align-items:center;justify-content:center;color:' + mutedColor + '}',
+    '.pcard .thumb svg{width:24px;height:24px;fill:currentColor;opacity:.7}',
+    '.pcard .info{flex:1;min-width:0}',
+    '.pcard .name{font-size:13.5px;font-weight:600;line-height:1.3;color:' + textColor + ';',
+    'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}',
+    '.pcard .meta{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;margin-top:5px}',
+    '.pcard .price{font-size:14px;font-weight:700;color:' + textColor + '}',
+    '.pcard .was{font-size:12px;color:' + mutedColor + ';text-decoration:line-through}',
+    '.pcard .stock{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:#ecfdf5;color:#047857}',
+    '.pcard .stock.out{background:' + agentBubble + ';color:' + mutedColor + '}',
+    '.pcard .view{flex:none;display:inline-flex;align-items:center;gap:5px;padding:9px 12px;border-radius:10px;',
+    'background:' + primary + ';color:' + onPrimary + ';font-size:12.5px;font-weight:600;text-decoration:none;',
+    'transition:transform .15s ease,box-shadow .15s ease}',
+    '.pcard .view:hover{transform:translateY(-1px);box-shadow:0 6px 14px ' + hexToRgba(primary, .3) + '}',
+    '.pcard .view svg{width:12px;height:12px;fill:currentColor}',
+    '@media (max-width:380px){.pcard .view span{display:none}}',
     '.msg .file{display:flex;align-items:center;gap:8px;font-size:13px;opacity:.95;margin-top:6px}',
     '.msg .file svg{width:15px;height:15px;fill:currentColor;flex:none}',
     '.msg img.shot{display:block;max-width:190px;border-radius:10px;margin-top:8px}',
@@ -332,7 +369,156 @@
     return div.innerHTML.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
   }
 
+  var GENERIC_LABEL = /^(link|here|click here|this link|link to (the )?product|product link|view|view product|open|website|page|more info|details)$/i;
+
+  function normalizeLink(url) {
+    return String(url || '').toLowerCase().replace(/^https?:\/\/(www\.)?/, '').replace(/[#?].*$/, '').replace(/\/+$/, '');
+  }
+
+  /** "https://shop.com/refund-policy/" -> "Refund Policy" */
+  function linkLabel(url) {
+    try {
+      var parsed = new URL(url);
+      var parts = parsed.pathname.split('/').filter(Boolean);
+      var last = parts.length ? decodeURIComponent(parts[parts.length - 1]) : parsed.hostname.replace(/^www\./, '');
+      var words = last.replace(/\.[a-z0-9]{2,4}$/i, '').replace(/[-_]+/g, ' ').trim();
+      var label = words.replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+      return label.length > 30 ? label.slice(0, 29) + '…' : label;
+    } catch (e) {
+      return 'Open link';
+    }
+  }
+
+  /**
+   * Turns a reply into tidy text plus link buttons: markdown links and bare
+   * URLs leave the sentence (a meaningful label stays as words) and become
+   * buttons underneath. Links already shown as product cards are dropped.
+   */
+  function parseReply(text, products) {
+    var cardLinks = (products || []).map(function (p) { return normalizeLink(p.url); });
+    var links = [];
+    function remember(url, label) {
+      url = url.replace(/[.,;:!?)]+$/, '');
+      var key = normalizeLink(url);
+      if (!key || cardLinks.indexOf(key) !== -1) {
+        return;
+      }
+      for (var i = 0; i < links.length; i++) {
+        if (links[i].key === key) {
+          return;
+        }
+      }
+      links.push({ url: url, key: key, label: label && !GENERIC_LABEL.test(label.trim()) ? label.trim() : linkLabel(url) });
+    }
+
+    var out = String(text || '').replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, function (all, label, url) {
+      remember(url, label);
+      return GENERIC_LABEL.test(label.trim()) ? '' : label;
+    });
+    out = out.replace(/https?:\/\/[^\s<>()\[\]]+/g, function (url) {
+      remember(url);
+      return '';
+    });
+    out = out
+      .replace(/\(\s*\)/g, '')
+      .replace(/[ \t]+-[ \t]*$/gm, '')
+      .replace(/^[ \t]*-[ \t]*$\n?/gm, '')
+      .replace(/[ \t]*:[ \t]*$/gm, ':')
+      .replace(/[ \t]{2,}/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+
+    var div = document.createElement('div');
+    div.textContent = out;
+    var html = div.innerHTML.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    return { html: html, links: links.slice(0, 3) };
+  }
+
+  function addBotMessage(text, products) {
+    products = products || [];
+    var parsed = parseReply(text, products);
+    if (parsed.html) {
+      var bubble = el('div', 'msg bot');
+      bubble.innerHTML = parsed.html;
+      messages.appendChild(bubble);
+    }
+
+    if (parsed.links.length) {
+      var row = el('div', 'actions');
+      parsed.links.forEach(function (link) {
+        var a = document.createElement('a');
+        a.className = 'action';
+        a.href = link.url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.appendChild(document.createTextNode(link.label));
+        a.insertAdjacentHTML('beforeend', svg('external'));
+        row.appendChild(a);
+      });
+      messages.appendChild(row);
+    }
+
+    if (products.length) {
+      var list = el('div', 'cards');
+      products.forEach(function (p) {
+        var card = el('div', 'pcard');
+        var thumb;
+        if (p.image) {
+          thumb = document.createElement('img');
+          thumb.className = 'thumb';
+          thumb.src = p.image;
+          thumb.alt = '';
+          thumb.loading = 'lazy';
+          // A missing or blocked image falls back to the placeholder tile.
+          thumb.addEventListener('error', function () {
+            this.replaceWith(el('div', 'thumb', svg('bag')));
+          });
+        } else {
+          thumb = el('div', 'thumb', svg('bag'));
+        }
+        card.appendChild(thumb);
+
+        var info = el('div', 'info');
+        var name = el('div', 'name');
+        name.textContent = p.name;
+        info.appendChild(name);
+        var meta = el('div', 'meta');
+        var price = el('span', 'price');
+        price.textContent = p.price;
+        meta.appendChild(price);
+        if (p.was) {
+          var was = el('span', 'was');
+          was.textContent = p.was;
+          meta.appendChild(was);
+        }
+        var stock = el('span', 'stock' + (p.in_stock ? '' : ' out'));
+        stock.textContent = p.in_stock ? (p.stock || 'In stock') : 'Out of stock';
+        meta.appendChild(stock);
+        info.appendChild(meta);
+        card.appendChild(info);
+
+        if (p.url) {
+          var view = document.createElement('a');
+          view.className = 'view';
+          view.href = p.url;
+          view.target = '_blank';
+          view.rel = 'noopener noreferrer';
+          view.innerHTML = '<span>View</span>' + svg('arrow');
+          view.setAttribute('aria-label', 'View ' + p.name);
+          card.appendChild(view);
+        }
+        list.appendChild(card);
+      });
+      messages.appendChild(list);
+    }
+    messages.scrollTop = messages.scrollHeight;
+  }
+
   function addMessage(role, text, file) {
+    if (role !== 'user' && !file) {
+      addBotMessage(text, []);
+      return;
+    }
     var node = el('div', 'msg ' + (role === 'user' ? 'user' : 'bot'));
     node.innerHTML = text ? linkify(text) : '';
     if (file && file.name) {
@@ -399,7 +585,11 @@
 
   if (history.length) {
     history.forEach(function (item) {
-      addMessage(item.role, item.text, item.file);
+      if (item.role === 'user') {
+        addMessage('user', item.text, item.file);
+      } else {
+        addBotMessage(item.text, item.products);
+      }
     });
   } else if (design.welcome_message) {
     addMessage('bot', design.welcome_message);
@@ -618,8 +808,9 @@
       typing.remove();
       var reply = (result.data && (result.data.reply || result.data.error)) || 'Something went wrong. Please try again.';
       conversationId = (result.data && result.data.conversation_id) || conversationId;
-      addMessage('bot', reply);
-      history.push({ role: 'bot', text: reply });
+      var products = (result.data && result.data.products) || [];
+      addBotMessage(reply, products);
+      history.push({ role: 'bot', text: reply, products: products });
       persist();
     }).catch(function () {
       typing.remove();

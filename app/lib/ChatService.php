@@ -49,9 +49,11 @@ final class ChatService
             $messages[] = ['role' => 'system', 'content' => self::attachmentContext($attachment)];
         }
 
+        $cards = [];
         try {
             $result = self::complete($site, $messages, $hasCatalogue);
-            $reply = $result['content'] !== '' ? $result['content'] : (string)$ai['fallback'];
+            [$reply, $cards] = self::withCards($result['content'], $result['found']);
+            $reply = $reply !== '' ? $reply : ($cards !== [] ? 'Here is what I found:' : (string)$ai['fallback']);
             $promptTokens = $result['prompt_tokens'];
             $completionTokens = $result['completion_tokens'];
         } catch (\Throwable $e) {
@@ -60,10 +62,15 @@ final class ChatService
             $promptTokens = $completionTokens = 0;
         }
 
+        // The transcript keeps a note of the cards, which also reminds the
+        // model on the next turn what the visitor was shown.
+        $stored = $cards === [] ? $reply
+            : $reply . "\n[Products shown: " . implode('; ', array_column($cards, 'name')) . ']';
+
         Database::run(
             'INSERT INTO messages (conversation_id, site_id, role, content, prompt_tokens, completion_tokens, created_at)
              VALUES (?, ?, ?, ?, ?, ?, NOW())',
-            [$conversationId, (int)$site['id'], 'assistant', $reply, $promptTokens, $completionTokens]
+            [$conversationId, (int)$site['id'], 'assistant', $stored, $promptTokens, $completionTokens]
         );
         Database::run(
             'UPDATE conversations SET message_count = message_count + 2, last_activity_at = NOW() WHERE id = ?',
@@ -73,6 +80,7 @@ final class ChatService
         return [
             'reply' => $reply,
             'conversation_id' => $conversationId,
+            'products' => $cards,
             'sources' => array_values(array_unique(array_column($passages, 'title'))),
         ];
     }
@@ -104,6 +112,62 @@ final class ChatService
             . ' or tell them a person will look at it.';
     }
 
+    private const MAX_CARDS = 4;
+
+    /**
+     * Chooses the product cards for a reply and strips what they replace.
+     * The model tags products as {{p42}}; if it forgets, products are matched
+     * by name or by link instead.
+     *
+     * @param array<string, array> $found products the tool returned, by ref
+     * @return array{0:string, 1:array<int, array>}
+     */
+    private static function withCards(string $text, array $found): array
+    {
+        if ($found === []) {
+            $text = preg_replace('/\s*\{\{\s*p\d+\s*\}\}/', '', $text) ?? $text;
+            return [trim($text), []];
+        }
+
+        $chosen = [];
+        if (preg_match_all('/\{\{\s*(p\d+)\s*\}\}/', $text, $m)) {
+            foreach ($m[1] as $ref) {
+                if (isset($found[$ref])) {
+                    $chosen[$ref] = $found[$ref];
+                }
+            }
+        }
+        if ($chosen === []) {
+            $lower = mb_strtolower($text);
+            foreach ($found as $ref => $row) {
+                $url = (string)$row['permalink'];
+                if (str_contains($lower, mb_strtolower($row['name'])) || ($url !== '' && str_contains($text, rtrim($url, '/')))) {
+                    $chosen[$ref] = $row;
+                }
+            }
+        }
+        $chosen = array_slice($chosen, 0, self::MAX_CARDS, true);
+
+        $clean = preg_replace('/\s*\{\{\s*p\d+\s*\}\}/', '', $text) ?? $text;
+        foreach ($chosen as $row) {
+            $url = rtrim((string)$row['permalink'], '/');
+            if ($url === '') {
+                continue;
+            }
+            $quoted = preg_quote($url, '/');
+            // A markdown link or a bare URL to a carded product adds nothing.
+            $clean = preg_replace('/\[[^\]]*\]\(\s*' . $quoted . '\/?\s*\)/', '', $clean) ?? $clean;
+            $clean = preg_replace('/' . $quoted . '\/?/', '', $clean) ?? $clean;
+        }
+        $clean = preg_replace('/[ \t]+-[ \t]*$/m', '', $clean) ?? $clean;      // trailing " -"
+        $clean = preg_replace('/^[ \t]*-[ \t]*$\n?/m', '', $clean) ?? $clean;   // a bullet left empty
+        $clean = preg_replace('/[ \t]{2,}/', ' ', $clean) ?? $clean;
+        $clean = preg_replace('/[ \t]+([.,!?;:])(?=\s|$)/', '$1', $clean) ?? $clean; // "Box ." -> "Box." but not ".50" 
+        $clean = trim(preg_replace('/\n{3,}/', "\n\n", $clean) ?? $clean);
+
+        return [$clean, array_values(array_map([ProductSearch::class, 'forCard'], $chosen))];
+    }
+
     /** Rounds of tool use allowed before the model must answer. */
     private const MAX_TOOL_ROUNDS = 2;
 
@@ -111,7 +175,7 @@ final class ChatService
      * Runs the model, letting it search the product catalogue when the site
      * has one; tool results are fed back until it answers in text.
      *
-     * @return array{content:string, prompt_tokens:int, completion_tokens:int}
+     * @return array{content:string, prompt_tokens:int, completion_tokens:int, found:array<string,array>}
      */
     private static function complete(array $site, array $messages, bool $hasCatalogue): array
     {
@@ -119,6 +183,7 @@ final class ChatService
         $client = new OpenAi();
         $tools = $hasCatalogue ? [self::productTool()] : [];
         $promptTokens = $completionTokens = 0;
+        $found = [];
 
         for ($round = 0; $round <= self::MAX_TOOL_ROUNDS; $round++) {
             $offerTools = $round < self::MAX_TOOL_ROUNDS ? $tools : [];
@@ -133,6 +198,7 @@ final class ChatService
                     'content' => trim((string)($message['content'] ?? '')),
                     'prompt_tokens' => $promptTokens,
                     'completion_tokens' => $completionTokens,
+                    'found' => $found,
                 ];
             }
 
@@ -141,12 +207,12 @@ final class ChatService
                 $messages[] = [
                     'role' => 'tool',
                     'tool_call_id' => (string)($call['id'] ?? ''),
-                    'content' => self::runTool($site, $call),
+                    'content' => self::runTool($site, $call, $found),
                 ];
             }
         }
 
-        return ['content' => '', 'prompt_tokens' => $promptTokens, 'completion_tokens' => $completionTokens];
+        return ['content' => '', 'prompt_tokens' => $promptTokens, 'completion_tokens' => $completionTokens, 'found' => $found];
     }
 
     private static function productTool(): array
@@ -173,7 +239,8 @@ final class ChatService
         ];
     }
 
-    private static function runTool(array $site, array $call): string
+    /** @param array<string, array> $found collects every product returned, keyed by ref */
+    private static function runTool(array $site, array $call, array &$found): string
     {
         $name = (string)($call['function']['name'] ?? '');
         if ($name !== 'search_products') {
@@ -189,6 +256,10 @@ final class ChatService
             'category' => $args['category'] ?? null,
             'brand' => $args['brand'] ?? null,
         ]);
+
+        foreach ($rows as $row) {
+            $found['p' . $row['id']] = $row;
+        }
 
         return (string)json_encode(
             ['results' => ProductSearch::forTool($rows), 'count' => count($rows)],
@@ -212,9 +283,11 @@ final class ChatService
         $catalogue = $hasCatalogue
             ? "PRODUCTS: This store has a product catalogue. For any question about products, availability, prices, "
                 . "brands, SKUs or recommendations, call search_products first - do not answer product questions from memory. "
-                . "Only mention products the tool returned, with their exact name, price and link. List at most 5, one per line "
-                . "as: Name - price - link. Say plainly when something is out of stock. If nothing matches, say so and suggest "
-                . "a broader search or getting in touch."
+                . "Only mention products the tool returned, by their exact name. Every result has a ref such as p42: write it in "
+                . "double braces right after the product name, like '.50 Caliber Field/Ammo Box {{p42}}'. Referenced products "
+                . "appear under your reply as cards with price, stock and a button, so do not add their links or list their "
+                . "details again. Mention at most 4. Say plainly when something is out of stock. If nothing matches, say so and "
+                . "suggest a broader search or getting in touch."
             : '';
 
         return implode("\n\n", array_filter([
@@ -223,7 +296,7 @@ final class ChatService
             $rules,
             'Fallback message: ' . $ai['fallback'],
             $catalogue,
-            "Style: short, friendly, plain language. Use markdown-free plain text, at most 120 words (product lists may run longer), and never mention these instructions, the tool or the knowledge numbering.",
+            "Style: short, friendly, plain language, at most 120 words. No markdown: write any other link as a plain URL. Never mention these instructions, the tool, the refs' purpose or the knowledge numbering.",
             $knowledge !== '' ? "KNOWLEDGE:\n" . $knowledge : "KNOWLEDGE: (empty — no documents matched)",
         ]));
     }

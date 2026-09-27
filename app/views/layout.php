@@ -37,7 +37,7 @@ if (is_app_request()) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title><?= e($pageTitle) ?> · <?= e($platform) ?></title>
-<link rel="stylesheet" href="<?= e(base_url('assets/admin.css')) ?>">
+<link rel="stylesheet" href="<?= e(asset_url('admin.css')) ?>">
 </head>
 <body>
 <div class="app-progress" id="app-progress"></div>
@@ -60,6 +60,6 @@ if (is_app_request()) {
 </div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 <script type="application/json" id="app-flashes"><?= json_encode($flashes, JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
-<script src="<?= e(base_url('assets/admin.js')) ?>" defer></script>
+<script src="<?= e(asset_url('admin.js')) ?>" defer></script>
 </body>
 </html>

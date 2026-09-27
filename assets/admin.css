@@ -85,7 +85,7 @@ label { display: block; font-weight: 600; font-size: 13.5px; margin-bottom: 6px;
 .field { margin-bottom: 16px; }
 .field .help { color: var(--muted); font-size: 12.5px; margin-top: 5px; }
 
-input[type=text], input[type=password], input[type=email], input[type=url], input[type=number], select, textarea {
+input[type=text], input[type=password], input[type=email], input[type=url], input[type=number], input[type=search], select, textarea {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--border);
@@ -343,7 +343,7 @@ pre.code {
 .card-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
 .card-head h2 { margin: 0; }
 .card-head .product-total { font-weight: 500; font-size: 14px; margin-left: 4px; }
-.product-search { max-width: 300px; }
+.product-search { max-width: 300px; padding: 8px 12px; }
 .product-list { display: flex; flex-direction: column; }
 .product-row {
   display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 14px;
@@ -360,3 +360,26 @@ pre.code {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
   margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 13.5px;
 }
+
+/* ---------- knowledge tabs ---------- */
+.seg-tabs {
+  display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; margin-bottom: 16px;
+  background: #f1f5f9; border-radius: 12px;
+}
+.seg {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 0; background: transparent; cursor: pointer;
+  padding: 8px 14px; border-radius: 9px;
+  font: 600 14px/1 inherit; color: var(--muted);
+  transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+}
+.seg:hover { color: var(--text); }
+.seg.active { background: #fff; color: var(--text); box-shadow: 0 1px 3px rgba(15, 23, 42, .12); }
+.seg .count {
+  min-width: 22px; padding: 3px 7px; border-radius: 999px;
+  background: #e2e8f0; color: var(--muted); font-size: 12px; text-align: center;
+}
+.seg.active .count { background: #eef2ff; color: var(--primary); }
+.kb-pane.is-entering { animation: tab-in .22s ease both; }
+.doc-title { font-weight: 600; color: var(--text); text-decoration: none; }
+.doc-title:hover { color: var(--primary); }

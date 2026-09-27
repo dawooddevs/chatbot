@@ -813,4 +813,25 @@
     var query = event.target.value;
     productTimer = setTimeout(function () { loadProducts(query); }, 250);
   });
+  /* ---------- knowledge document tabs ---------- */
+  document.addEventListener('click', function (event) {
+    var tab = event.target.closest('[data-kb-tab]');
+    if (!tab || tab.classList.contains('active')) {
+      return;
+    }
+    var card = tab.closest('.kb-card');
+    var name = tab.getAttribute('data-kb-tab');
+    card.querySelectorAll('[data-kb-tab]').forEach(function (item) {
+      var on = item === tab;
+      item.classList.toggle('active', on);
+      item.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    card.querySelectorAll('[data-kb-pane]').forEach(function (pane) {
+      var on = pane.getAttribute('data-kb-pane') === name;
+      pane.hidden = !on;
+      if (on) {
+        restartAnimation(pane, 'is-entering');
+      }
+    });
+  });
 })();

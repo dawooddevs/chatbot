@@ -38,4 +38,5 @@ try {
 json_out([
     'reply' => $result['reply'],
     'conversation_id' => $result['conversation_id'],
+    'products' => $result['products'],
 ]);

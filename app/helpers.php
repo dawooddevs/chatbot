@@ -41,6 +41,16 @@ function base_url(string $path = ''): string
     return $path === '' ? $base : $base . '/' . ltrim($path, '/');
 }
 
+/**
+ * URL of a file in assets/ stamped with its modification time, so browsers
+ * fetch the new copy after each deploy instead of a week-old cached one.
+ */
+function asset_url(string $path): string
+{
+    $file = APP_ROOT . '/assets/' . ltrim($path, '/');
+    return base_url('assets/' . ltrim($path, '/')) . (is_file($file) ? '?v=' . filemtime($file) : '');
+}
+
 function admin_url(string $route = '', array $params = []): string
 {
     $url = base_url('index.php');

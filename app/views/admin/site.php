@@ -12,7 +12,7 @@ $tabs = [
 <div class="page-head">
   <div>
     <h1><?= e($site['name']) ?></h1>
-    <p><span class="mono"><?= e($site['site_key']) ?></span> · <?= (int)$kbStats['documents'] ?> documents · <?= (int)$kbStats['chunks'] ?> chunks</p>
+    <p><span class="mono"><?= e($site['site_key']) ?></span></p>
   </div>
   <div class="actions">
     <a class="btn secondary" target="_blank" rel="noopener" href="<?= e(admin_url('preview', ['id' => $site['id']])) ?>">Live preview</a>

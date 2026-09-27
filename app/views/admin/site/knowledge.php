@@ -52,9 +52,102 @@ $lastSync = $store['last_sync_at'] ? time_ago(date('Y-m-d H:i:s', strtotime($sto
   <p class="hint cron-line">Auto-sync (cPanel cron): <span class="mono">php <?= e(APP_ROOT) ?>/bin/sync.php</span></p>
 </div>
 
-<div class="card" id="products-card" data-site="<?= (int)$site['id'] ?>">
+<?php
+$groups = ['pages' => [], 'posts' => [], 'other' => []];
+foreach ($documents as $document) {
+    $groups[['wp_page' => 'pages', 'wp_post' => 'posts'][$document['source_type']] ?? 'other'][] = $document;
+}
+$counts = [
+    'pages' => count($groups['pages']),
+    'posts' => count($groups['posts']),
+    'products' => $productCount,
+    'other' => count($groups['other']),
+];
+$openTab = 'pages';
+foreach (['pages', 'posts', 'products', 'other'] as $candidate) {
+    if ($counts[$candidate] > 0) {
+        $openTab = $candidate;
+        break;
+    }
+}
+if (!empty($editing)) {
+    $openTab = 'other';
+}
+
+$documentTable = static function (array $rows, bool $synced) use ($site, $statusBadges): void {
+    if (!$rows) {
+        echo '<div class="empty"><h3>Nothing here yet</h3></div>';
+        return;
+    }
+    ?>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Title</th><th>Status</th><th>Chunks</th><th>Updated</th><th></th></tr></thead>
+      <tbody>
+      <?php foreach ($rows as $document): ?>
+        <?php [$badge, $label] = $statusBadges[$document['status']] ?? ['grey', $document['status']]; ?>
+        <tr>
+          <td>
+            <?php if ($synced && $document['source_url']): ?>
+              <a class="doc-title" href="<?= e($document['source_url']) ?>" target="_blank" rel="noopener"><?= e($document['title']) ?></a>
+            <?php else: ?>
+              <strong><?= e($document['title']) ?></strong>
+            <?php endif; ?>
+            <br><span class="muted"><?= e(str_limit((string)$document['content'], 90)) ?></span>
+          </td>
+          <td>
+            <span class="badge <?= e($badge) ?>"><?= e($label) ?></span>
+            <?php if (!empty($document['error'])): ?>
+              <br><span class="muted" title="<?= e($document['error']) ?>"><?= e(str_limit((string)$document['error'], 40)) ?></span>
+            <?php endif; ?>
+          </td>
+          <td><?= (int)$document['chunk_count'] ?></td>
+          <td class="muted nowrap"><?= e(time_ago($document['updated_at'])) ?></td>
+          <td class="right">
+            <div class="row-actions">
+            <?php if (!$synced): ?>
+              <a class="btn secondary small" href="<?= e(admin_url('site', ['id' => $site['id'], 'tab' => 'knowledge', 'edit' => $document['id']])) ?>">Edit</a>
+            <?php endif; ?>
+            <form class="inline-form" method="post" action="<?= e(admin_url('knowledge')) ?>">
+              <?= Csrf::field() ?>
+              <input type="hidden" name="action" value="reindex">
+              <input type="hidden" name="id" value="<?= (int)$site['id'] ?>">
+              <input type="hidden" name="document_id" value="<?= (int)$document['id'] ?>">
+              <button class="btn secondary small" type="submit">Re-index</button>
+            </form>
+            <?php if (!$synced): ?>
+            <form class="inline-form" method="post" action="<?= e(admin_url('knowledge')) ?>" data-confirm="Delete this document?" data-confirm-action="Delete">
+              <?= Csrf::field() ?>
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="id" value="<?= (int)$site['id'] ?>">
+              <input type="hidden" name="document_id" value="<?= (int)$document['id'] ?>">
+              <button class="btn danger small" type="submit">Delete</button>
+            </form>
+            <?php endif; ?>
+            </div>
+          </td>
+        </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table></div>
+    <?php
+};
+$tabLabels = ['pages' => 'Pages', 'posts' => 'Posts', 'products' => 'Products', 'other' => 'Other'];
+?>
+<div class="card kb-card">
+  <div class="seg-tabs" role="tablist">
+    <?php foreach ($tabLabels as $key => $label): ?>
+      <button type="button" role="tab" class="seg <?= $openTab === $key ? 'active' : '' ?>" data-kb-tab="<?= $key ?>"
+              aria-selected="<?= $openTab === $key ? 'true' : 'false' ?>">
+        <?= $label ?> <span class="count"><?= number_format($counts[$key]) ?></span>
+      </button>
+    <?php endforeach; ?>
+  </div>
+
+  <div class="kb-pane" data-kb-pane="pages" <?= $openTab === 'pages' ? '' : 'hidden' ?>><?php $documentTable($groups['pages'], true); ?></div>
+  <div class="kb-pane" data-kb-pane="posts" <?= $openTab === 'posts' ? '' : 'hidden' ?>><?php $documentTable($groups['posts'], true); ?></div>
+  <div class="kb-pane" data-kb-pane="products" id="products-card" data-site="<?= (int)$site['id'] ?>" <?= $openTab === 'products' ? '' : 'hidden' ?>>
   <div class="card-head">
-    <h2>Products <span class="muted product-total"><?= number_format($productCount) ?></span></h2>
+    <span class="muted"><span class="product-total"><?= number_format($productCount) ?></span> products</span>
     <input type="search" class="product-search" placeholder="Search name, SKU or brand" aria-label="Search products" <?= $productCount ? '' : 'hidden' ?>>
   </div>
   <div class="product-list">
@@ -83,6 +176,8 @@ $lastSync = $store['last_sync_at'] ? time_ago(date('Y-m-d H:i:s', strtotime($sto
     <input type="file" name="file" accept=".csv" required>
     <button class="btn secondary small" type="submit">Import CSV</button>
   </form>
+  </div>
+  <div class="kb-pane" data-kb-pane="other" <?= $openTab === 'other' ? '' : 'hidden' ?>><?php $documentTable($groups['other'], false); ?></div>
 </div>
 
 <div class="card faq-card" data-faq-site="<?= (int)$site['id'] ?>">
@@ -213,52 +308,4 @@ $lastSync = $store['last_sync_at'] ? time_ago(date('Y-m-d H:i:s', strtotime($sto
       <?php endif; ?>
     </div>
   </div>
-</div>
-
-<div class="card">
-  <h2>Documents</h2>
-  <?php if (!$documents): ?>
-    <div class="empty"><h3>No documents yet</h3></div>
-  <?php else: ?>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Title</th><th>Source</th><th>Status</th><th>Chunks</th><th>Updated</th><th></th></tr></thead>
-      <tbody>
-      <?php foreach ($documents as $document): ?>
-        <?php [$badge, $label] = $statusBadges[$document['status']] ?? ['grey', $document['status']]; ?>
-        <tr>
-          <td>
-            <strong><?= e($document['title']) ?></strong><br>
-            <span class="muted"><?= e(str_limit((string)$document['content'], 90)) ?></span>
-          </td>
-          <td class="muted"><?= e(['wp_page' => 'page', 'wp_post' => 'post'][$document['source_type']] ?? $document['source_type']) ?></td>
-          <td>
-            <span class="badge <?= e($badge) ?>"><?= e($label) ?></span>
-            <?php if (!empty($document['error'])): ?>
-              <br><span class="muted" title="<?= e($document['error']) ?>"><?= e(str_limit((string)$document['error'], 40)) ?></span>
-            <?php endif; ?>
-          </td>
-          <td><?= (int)$document['chunk_count'] ?></td>
-          <td class="muted nowrap"><?= e(time_ago($document['updated_at'])) ?></td>
-          <td class="right nowrap">
-            <a class="btn secondary small" href="<?= e(admin_url('site', ['id' => $site['id'], 'tab' => 'knowledge', 'edit' => $document['id']])) ?>">Edit</a>
-            <form class="inline-form" method="post" action="<?= e(admin_url('knowledge')) ?>">
-              <?= Csrf::field() ?>
-              <input type="hidden" name="action" value="reindex">
-              <input type="hidden" name="id" value="<?= (int)$site['id'] ?>">
-              <input type="hidden" name="document_id" value="<?= (int)$document['id'] ?>">
-              <button class="btn secondary small" type="submit">Re-index</button>
-            </form>
-            <form class="inline-form" method="post" action="<?= e(admin_url('knowledge')) ?>" data-confirm="Delete this document?" data-confirm-action="Delete">
-              <?= Csrf::field() ?>
-              <input type="hidden" name="action" value="delete">
-              <input type="hidden" name="id" value="<?= (int)$site['id'] ?>">
-              <input type="hidden" name="document_id" value="<?= (int)$document['id'] ?>">
-              <button class="btn danger small" type="submit">Delete</button>
-            </form>
-          </td>
-        </tr>
-      <?php endforeach; ?>
-      </tbody>
-    </table></div>
-  <?php endif; ?>
 </div>

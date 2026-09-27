@@ -12,7 +12,7 @@ $platform = Settings::get('platform_name', 'Chatbot Platform');
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Sign in · <?= e($platform) ?></title>
-<link rel="stylesheet" href="<?= e(base_url('assets/admin.css')) ?>">
+<link rel="stylesheet" href="<?= e(asset_url('admin.css')) ?>">
 </head>
 <body>
 <div class="auth-wrap">

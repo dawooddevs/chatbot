@@ -57,6 +57,7 @@ final class ProductSearch
     {
         return array_map(static function (array $row): array {
             $item = [
+                'ref' => 'p' . $row['id'],
                 'name' => $row['name'],
                 'price' => self::price($row),
                 'in_stock' => (bool)$row['in_stock'],
@@ -75,6 +76,23 @@ final class ProductSearch
             }
             return $item;
         }, $rows);
+    }
+
+    /** What the widget needs to draw a product card. */
+    public static function forCard(array $row): array
+    {
+        $card = [
+            'name' => $row['name'],
+            'price' => self::price($row),
+            'in_stock' => (bool)$row['in_stock'],
+            'stock' => $row['stock_text'] ?: ((int)$row['in_stock'] === 1 ? 'In stock' : 'Out of stock'),
+            'url' => $row['permalink'] ?: null,
+            'image' => $row['image'] ?: null,
+        ];
+        if ((int)$row['on_sale'] === 1 && $row['regular_price'] !== null && (float)$row['regular_price'] > (float)$row['price']) {
+            $card['was'] = self::money((float)$row['regular_price'], $row);
+        }
+        return $card;
     }
 
     public static function price(array $row): string
