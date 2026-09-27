@@ -5,7 +5,7 @@
   </div>
   <form method="get" action="<?= e(base_url('index.php')) ?>" class="actions">
     <input type="hidden" name="r" value="conversations">
-    <select name="site" onchange="this.form.submit()">
+    <select name="site" onchange="this.form.requestSubmit()">
       <option value="0">All websites</option>
       <?php foreach ($sites as $site): ?>
         <option value="<?= (int)$site['id'] ?>" <?= $filterSite === (int)$site['id'] ? 'selected' : '' ?>><?= e($site['name']) ?></option>
@@ -31,7 +31,7 @@
           <td class="muted nowrap"><?= e(time_ago($conversation['last_activity_at'])) ?></td>
           <td class="right nowrap">
             <a class="btn secondary small" href="<?= e(admin_url('conversation', ['id' => $conversation['id']])) ?>">Open</a>
-            <form class="inline-form" method="post" action="<?= e(admin_url('conversations')) ?>" onsubmit="return confirm('Delete this conversation?');">
+            <form class="inline-form" method="post" action="<?= e(admin_url('conversations')) ?>" data-confirm="Delete this conversation?" data-confirm-action="Delete">
               <?= Csrf::field() ?>
               <input type="hidden" name="action" value="delete">
               <input type="hidden" name="conversation_id" value="<?= (int)$conversation['id'] ?>">

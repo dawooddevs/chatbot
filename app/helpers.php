@@ -50,10 +50,33 @@ function admin_url(string $route = '', array $params = []): string
     return $params ? $url . '?' . http_build_query($params) : $url;
 }
 
+/** True when the admin app shell made this request with fetch(). */
+function is_app_request(): bool
+{
+    return ($_SERVER['HTTP_X_APP_REQUEST'] ?? '') === '1';
+}
+
+/**
+ * The app shell follows redirects itself, so it gets the target in a header
+ * instead of a 302 - that keeps its request header on the follow-up call.
+ */
 function redirect(string $url): never
 {
+    if (is_app_request()) {
+        header('X-App-Redirect: ' . $url);
+        http_response_code(204);
+        exit;
+    }
     header('Location: ' . $url);
     exit;
+}
+
+/** Hands flash messages to the app shell, which shows them as toasts. */
+function app_flash_header(array $flashes): void
+{
+    if ($flashes !== [] && !headers_sent()) {
+        header('X-App-Flash: ' . base64_encode((string)json_encode($flashes)));
+    }
 }
 
 function post(string $key, ?string $default = null): ?string

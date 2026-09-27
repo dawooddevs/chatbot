@@ -27,7 +27,7 @@ Chatbot.reset();  // clear this visitor's history</pre>
     <h2 style="margin-top:26px">Site key</h2>
     <p class="hint">Regenerating disables the current embed code.</p>
     <p class="mono"><?= e($site['site_key']) ?></p>
-    <form method="post" action="<?= e(admin_url('site')) ?>" onsubmit="return confirm('Generate a new key? The current embed code will stop working until you replace it.');">
+    <form method="post" action="<?= e(admin_url('site')) ?>" data-confirm="Generate a new key? The current embed code stops working." data-confirm-action="Regenerate">
       <?= Csrf::field() ?>
       <input type="hidden" name="action" value="regenerate_key">
       <input type="hidden" name="id" value="<?= (int)$site['id'] ?>">

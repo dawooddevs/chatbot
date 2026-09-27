@@ -33,7 +33,7 @@
               <a class="btn secondary small" href="<?= e(admin_url('site', ['id' => $site['id'], 'tab' => 'knowledge'])) ?>">Knowledge</a>
               <a class="btn secondary small" href="<?= e(admin_url('site', ['id' => $site['id']])) ?>">Manage</a>
               <form class="inline-form" method="post" action="<?= e(admin_url('sites')) ?>"
-                    onsubmit="return confirm('Delete <?= e(addslashes($site['name'])) ?> and every document and conversation it has?');">
+                    data-confirm="Delete <?= e($site['name']) ?> and all its data?" data-confirm-action="Delete">
                 <?= Csrf::field() ?>
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="id" value="<?= (int)$site['id'] ?>">

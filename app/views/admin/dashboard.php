@@ -3,7 +3,7 @@
     <span><strong>Update deployed</strong> — build <span class="mono"><?= e($release['code']) ?></span><?php
       if ($release['deployed_at']): ?> · <?= e(time_ago(str_replace(['T', 'Z'], [' ', ''], $release['deployed_at']))) ?><?php
       endif; ?></span>
-    <form method="post" action="<?= e(admin_url('dashboard')) ?>">
+    <form method="post" action="<?= e(admin_url('dashboard')) ?>" data-inline-remove=".release-notice">
       <?= App\Csrf::field() ?>
       <input type="hidden" name="action" value="dismiss_release">
       <input type="hidden" name="code" value="<?= e($release['code']) ?>">

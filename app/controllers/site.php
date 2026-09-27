@@ -166,6 +166,7 @@ $panel = View::render('admin.site.' . $tab, $data, null);
 // The tab strip fetches this same URL with partial=1 and swaps just the panel.
 if (query('partial') === '1') {
     header('Content-Type: text/html; charset=utf-8');
+    app_flash_header(Session::takeFlashes());
     echo $panel;
     exit;
 }

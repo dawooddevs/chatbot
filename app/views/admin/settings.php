@@ -70,7 +70,7 @@ use App\OpenAi;
           <button class="btn secondary" type="submit">Clear old rate-limit rows</button>
         </form>
         <?php if ($hasKey && !$fromEnv): ?>
-          <form method="post" action="<?= e(admin_url('settings')) ?>" onsubmit="return confirm('Remove the stored API key? All bots will fall back to their fallback message.');">
+          <form method="post" action="<?= e(admin_url('settings')) ?>" data-confirm="Remove the stored API key?" data-confirm-action="Remove">
             <?= Csrf::field() ?>
             <input type="hidden" name="action" value="clear_key">
             <button class="btn danger" type="submit">Remove stored API key</button>

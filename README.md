@@ -13,7 +13,10 @@ Admin panel  →  add website  →  add knowledge  →  copy embed code  →  cl
 
 ## What you get
 
-**Backend (login protected)**
+**Backend (login protected)** — runs as a single-page app: links and forms go
+through `fetch`, pages swap in with transitions, confirmations use a modal and
+messages arrive as toasts, while addresses and the back button keep working.
+
 - Dashboard with conversation, message and document counts.
 - **Websites** — one entry per client site, each with its own key, knowledge base,
   design and allowed domains.

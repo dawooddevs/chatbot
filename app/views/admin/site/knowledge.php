@@ -54,7 +54,6 @@ $statusBadges = [
       <div class="actions">
         <button class="btn" type="submit" data-faq-submit>Add FAQ</button>
         <button class="btn secondary" type="button" data-faq-cancel hidden>Cancel</button>
-        <span class="faq-status muted"></span>
       </div>
     </form>
   </div>
@@ -182,7 +181,7 @@ $statusBadges = [
               <input type="hidden" name="document_id" value="<?= (int)$document['id'] ?>">
               <button class="btn secondary small" type="submit">Re-index</button>
             </form>
-            <form class="inline-form" method="post" action="<?= e(admin_url('knowledge')) ?>" onsubmit="return confirm('Delete this document?');">
+            <form class="inline-form" method="post" action="<?= e(admin_url('knowledge')) ?>" data-confirm="Delete this document?" data-confirm-action="Delete">
               <?= Csrf::field() ?>
               <input type="hidden" name="action" value="delete">
               <input type="hidden" name="id" value="<?= (int)$site['id'] ?>">
