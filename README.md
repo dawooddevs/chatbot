@@ -31,6 +31,12 @@ messages arrive as toasts, while addresses and the back button keep working.
 - **AI settings** — model, creativity, reply length, persona/system prompt, fallback
   message, strict-knowledge mode, passages per answer, minimum match score,
   remembered turns, per-visitor hourly message cap.
+- **Website sync** — enter a WordPress/WooCommerce address and press *Sync now*:
+  pages and posts become knowledge documents, and every product (name, SKU, UPC,
+  price, stock, brand, categories, link) lands in a searchable catalogue. The
+  chat searches it through an OpenAI tool call, so answers quote real prices and
+  links. A WooCommerce CSV export works as a fallback, and `bin/sync.php` keeps
+  it fresh from cron.
 - **Conversations** — full transcripts of every visitor chat, filterable per website,
   including any files a visitor attached (served only to the signed-in owner).
 - **Settings** — OpenAI key (or `OPENAI_API_KEY` env var), API base URL, defaults,
@@ -64,6 +70,7 @@ embed.php            serves the widget + that site's config
 api/chat.php         public chat endpoint (CORS limited to allowed domains)
 api/upload.php       visitor file attachments
 api/transcribe.php   voice note -> text
+bin/sync.php         cron entry point for website/product sync
 assets/widget.js     the widget itself
 assets/admin.css     admin styling
 app/

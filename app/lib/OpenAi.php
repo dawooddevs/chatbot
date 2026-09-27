@@ -53,6 +53,35 @@ final class OpenAi
     }
 
     /**
+     * One chat turn that may answer with tool calls instead of text.
+     *
+     * @param array<int, array> $messages
+     * @param array<int, array> $tools OpenAI function definitions
+     * @return array{message: array, prompt_tokens: int, completion_tokens: int}
+     */
+    public function chatWithTools(array $messages, string $model, float $temperature, int $maxTokens, array $tools): array
+    {
+        $payload = [
+            'model' => $model,
+            'messages' => $messages,
+            'temperature' => $temperature,
+            'max_tokens' => $maxTokens,
+        ];
+        if ($tools !== []) {
+            $payload['tools'] = $tools;
+            $payload['tool_choice'] = 'auto';
+        }
+
+        $data = $this->post('/chat/completions', $payload, 90);
+
+        return [
+            'message' => (array)($data['choices'][0]['message'] ?? []),
+            'prompt_tokens' => (int)($data['usage']['prompt_tokens'] ?? 0),
+            'completion_tokens' => (int)($data['usage']['completion_tokens'] ?? 0),
+        ];
+    }
+
+    /**
      * @param string[] $inputs
      * @return array<int, float[]>
      */

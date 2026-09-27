@@ -410,7 +410,8 @@
 
     document.addEventListener('submit', function (event) {
       var form = event.target;
-      if (event.defaultPrevented || form.getAttribute('id') === 'faq-form') {
+      // Forms with their own script (FAQs, website sync) handle themselves.
+      if (event.defaultPrevented || form.hasAttribute('data-js-form')) {
         return;
       }
       var submitter = event.submitter;
@@ -600,5 +601,192 @@
     if (event.target.closest('[data-faq-cancel]')) {
       resetFaqForm();
     }
+  });
+  /* ---------- website sync ---------- */
+  function storeRequest(siteId, fields, method) {
+    if (method === 'GET') {
+      var url = toUrl('index.php');
+      url.searchParams.set('r', 'store');
+      url.searchParams.set('site_id', siteId);
+      Object.keys(fields).forEach(function (key) { url.searchParams.set(key, fields[key]); });
+      return fetch(url.href, { credentials: 'same-origin' }).then(readJson);
+    }
+    var body = new FormData();
+    body.append('_csrf', csrf());
+    body.append('site_id', siteId);
+    Object.keys(fields).forEach(function (key) {
+      var value = fields[key];
+      if (Array.isArray(value)) {
+        value.forEach(function (item) { body.append(key + '[]', item); });
+      } else {
+        body.append(key, value);
+      }
+    });
+    return fetch('index.php?r=store', { method: 'POST', body: body, credentials: 'same-origin' }).then(readJson);
+  }
+
+  function readJson(response) {
+    return response.json().catch(function () {
+      throw new Error('The server returned an unexpected answer (HTTP ' + response.status + ').');
+    }).then(function (data) {
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      return data;
+    });
+  }
+
+  var PHASE_LABELS = { pages: 'Pages', posts: 'Posts', products: 'Products' };
+
+  function syncUi() {
+    var card = document.getElementById('store-sync');
+    if (!card) {
+      return null;
+    }
+    return {
+      card: card,
+      button: card.querySelector('[data-sync-button]'),
+      progress: card.querySelector('.sync-progress'),
+      bar: card.querySelector('.sync-bar span'),
+      label: card.querySelector('.sync-label'),
+      status: card.querySelector('.sync-status'),
+      error: card.querySelector('.sync-error')
+    };
+  }
+
+  function showProgress(phase, page, totalPages, total) {
+    var ui = syncUi();
+    if (!ui) {
+      return;
+    }
+    ui.progress.hidden = false;
+    var pct = totalPages > 0 ? Math.min(100, Math.round(page / totalPages * 100)) : 100;
+    ui.bar.style.width = pct + '%';
+    ui.label.textContent = PHASE_LABELS[phase] + ' · ' +
+      (totalPages > 0 ? 'page ' + page + ' of ' + totalPages + ' · ' + total.toLocaleString() + ' total' : 'none found');
+  }
+
+  function runSync(form) {
+    var ui = syncUi();
+    var siteId = ui.card.getAttribute('data-site');
+    var fields = {
+      action: 'start',
+      url: form.querySelector('[name="url"]').value,
+      pages: form.querySelector('[name="pages"]').checked ? '1' : '0',
+      posts: form.querySelector('[name="posts"]').checked ? '1' : '0',
+      products: form.querySelector('[name="products"]').checked ? '1' : '0'
+    };
+    var token;
+    var completed = [];
+
+    ui.button.disabled = true;
+    ui.button.classList.add('is-busy');
+    ui.button.textContent = 'Syncing…';
+    if (ui.error) {
+      ui.error.remove();
+    }
+    progressStart();
+
+    function runPhase(phase, page) {
+      return storeRequest(siteId, { action: 'step', token: token, phase: phase, page: page }).then(function (result) {
+        showProgress(phase, result.page, result.total_pages, result.total);
+        return result.next_page ? runPhase(phase, result.next_page) : null;
+      });
+    }
+
+    storeRequest(siteId, fields)
+      .then(function (start) {
+        token = start.token;
+        form.querySelector('[name="url"]').value = start.url;
+        return start.phases.reduce(function (chain, phase) {
+          return chain.then(function () {
+            showProgress(phase, 0, 1, 0);
+            return runPhase(phase, 1).then(function () { completed.push(phase); });
+          });
+        }, Promise.resolve());
+      })
+      .then(function () {
+        return storeRequest(siteId, { action: 'finish', token: token, completed: completed });
+      })
+      .then(function (done) {
+        var stats = done.stats;
+        var live = syncUi();
+        if (live) {
+          live.status.textContent = 'Last sync just now · ' + stats.products.toLocaleString() + ' products · ' +
+            stats.pages.toLocaleString() + ' pages · ' + stats.posts.toLocaleString() + ' posts';
+          live.label.textContent = 'Done';
+          live.bar.style.width = '100%';
+        }
+        toast('success', 'Sync complete: ' + stats.products.toLocaleString() + ' products, ' +
+          stats.pages + ' pages, ' + stats.posts + ' posts.');
+        loadProducts('');
+      })
+      .catch(function (error) {
+        toast('error', error.message);
+        if (token) {
+          storeRequest(siteId, { action: 'fail', message: error.message }).catch(function () {});
+        }
+        var live = syncUi();
+        if (live) {
+          var line = document.createElement('p');
+          line.className = 'sync-error';
+          line.textContent = error.message;
+          live.status.after(line);
+        }
+      })
+      .then(function () {
+        var live = syncUi();
+        if (live) {
+          live.button.disabled = false;
+          live.button.classList.remove('is-busy');
+          live.button.textContent = 'Sync now';
+        }
+        progressDone();
+      });
+  }
+
+  document.addEventListener('submit', function (event) {
+    var form = event.target.closest('#store-sync-form');
+    if (!form) {
+      return;
+    }
+    event.preventDefault();
+    runSync(form);
+  });
+
+  /* ---------- product list ---------- */
+  var productTimer = null;
+
+  function loadProducts(query) {
+    var card = document.getElementById('products-card');
+    if (!card) {
+      return;
+    }
+    storeRequest(card.getAttribute('data-site'), { action: 'products', q: query }, 'GET').then(function (data) {
+      var list = card.querySelector('.product-list');
+      card.querySelector('.product-total').textContent = data.total.toLocaleString();
+      card.querySelector('.product-search').hidden = data.total === 0;
+      card.querySelector('.product-empty').hidden = data.products.length > 0;
+      card.querySelector('.product-empty').textContent = data.total === 0 ? 'No products yet.' : 'No matches.';
+      list.innerHTML = data.products.map(function (p) {
+        var name = p.url
+          ? '<a href="' + escapeHtml(p.url) + '" target="_blank" rel="noopener">' + escapeHtml(p.name) + '</a>'
+          : escapeHtml(p.name);
+        return '<div class="product-row is-new"><div class="product-name">' + name +
+          (p.sku ? ' <span class="mono muted">' + escapeHtml(p.sku) + '</span>' : '') + '</div>' +
+          '<div class="product-price">' + escapeHtml(p.price) + '</div>' +
+          '<span class="badge ' + (p.in_stock ? 'green' : 'grey') + '">' +
+          escapeHtml(p.stock || (p.in_stock ? 'In stock' : 'Out of stock')) + '</span></div>';
+      }).join('');
+    }).catch(function (error) { toast('error', error.message); });
+  }
+
+  document.addEventListener('input', function (event) {
+    if (!event.target.classList.contains('product-search')) {
+      return;
+    }
+    clearTimeout(productTimer);
+    var query = event.target.value;
+    productTimer = setTimeout(function () { loadProducts(query); }, 250);
   });
 })();

@@ -92,6 +92,31 @@ Paste it before `</head>` (or `</body>`) on every page of the client's site.
 Design and knowledge changes take effect without touching the client site again; the
 embed script is cached for 5 minutes.
 
+## Syncing a WooCommerce store
+
+Knowledge base tab → **Website sync**: enter the shop address, tick pages, posts
+and products, press **Sync now**. It reads the site's public APIs
+(`/wp-json/wp/v2/pages`, `/wp-json/wp/v2/posts`, `/wp-json/wc/store/v1/products`),
+100 products per request, with live progress. A 5,000-product store takes about
+one to three minutes.
+
+- Pages and posts become knowledge-base documents; unchanged ones keep their
+  embeddings on later syncs.
+- Products go into their own catalogue, searched by the chat whenever a visitor
+  asks about products, prices or stock. Products removed from the shop disappear
+  on the next full sync.
+- If the API is blocked (security plugin, firewall), export from
+  WooCommerce → Products → Export and use **Import CSV** instead. The export has
+  no product URLs, so those products link to a store search for their name.
+
+Keep it current with cPanel → **Cron Jobs**, e.g. every hour:
+
+```
+0 * * * * php /home/CPANEL_USER/chatbot.dawood.top/bin/sync.php >/dev/null 2>&1
+```
+
+The exact path is shown under the sync form. Add `--site=ID` to sync one website.
+
 ## Automatic deployment from GitHub
 
 Rather than re-uploading files by hand after every change, let GitHub push them for
@@ -172,4 +197,6 @@ deployment.
 | Voice button missing | The browser blocks `MediaRecorder` on plain HTTP; the site must be HTTPS. It is also hidden when *Let visitors record voice messages* is off. |
 | Voice note is not transcribed | Transcription needs the cURL extension and a working OpenAI key. |
 | Mic says permission was refused | Click the lock icon in the address bar, set Microphone to Allow, reload the page. The widget now names the real reason (refused, no device, in use elsewhere), so read the message under the composer. |
+| Sync says a security plugin or firewall may be blocking API access | Open `https://SHOP/wp-json/wc/store/v1/products?per_page=1` in a browser. If it shows no JSON, allow the REST API in the security plugin, or use Import CSV. |
+| CSV upload is rejected as too large | Raise `upload_max_filesize` and `post_max_size` in cPanel → MultiPHP INI Editor. |
 | Attachment fails with 413 | Raise `upload_max_filesize` and `post_max_size` in cPanel → MultiPHP INI Editor. |

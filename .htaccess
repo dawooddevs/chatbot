@@ -14,7 +14,7 @@ Options -Indexes
 </IfModule>
 
 # Never serve PHP source or config from these folders.
-RedirectMatch 404 ^/(.*/)?(app|storage)/.*$
+RedirectMatch 404 ^/(.*/)?(app|storage|bin)/.*$
 
 <IfModule mod_rewrite.c>
     RewriteEngine On

@@ -4,6 +4,7 @@ declare(strict_types=1);
 use App\Auth;
 use App\Database;
 use App\KnowledgeBase;
+use App\ProductCsv;
 use App\Scraper;
 use App\Session;
 use App\Site;
@@ -82,6 +83,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             KnowledgeBase::indexDocument($id, $site);
             Session::flash('success', 'File imported and indexed.');
+            redirect($back);
+        }
+
+        if ($action === 'import_products_csv') {
+            $file = $_FILES['file'] ?? null;
+            if (!$file || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+                $tooBig = in_array($file['error'] ?? 0, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true);
+                throw new RuntimeException($tooBig
+                    ? 'That file is larger than this server accepts. Raise upload_max_filesize in cPanel -> MultiPHP INI Editor.'
+                    : 'Choose the CSV exported from WooCommerce.');
+            }
+            if (strtolower(pathinfo((string)$file['name'], PATHINFO_EXTENSION)) !== 'csv') {
+                throw new RuntimeException('Upload the .csv file from WooCommerce -> Products -> Export.');
+            }
+            if ((int)$file['size'] > ProductCsv::MAX_BYTES) {
+                throw new RuntimeException('CSV files must be 30 MB or smaller.');
+            }
+            @set_time_limit(300);
+            $result = ProductCsv::import($site, (string)$file['tmp_name']);
+            Session::flash('success', number_format($result['imported']) . ' products imported'
+                . ($result['skipped'] ? ', ' . number_format($result['skipped']) . ' hidden or unpublished skipped.' : '.'));
             redirect($back);
         }
 

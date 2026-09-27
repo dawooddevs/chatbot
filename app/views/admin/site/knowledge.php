@@ -18,6 +18,73 @@ $statusBadges = [
   </form>
 </div>
 
+<?php
+$lastSync = $store['last_sync_at'] ? time_ago(date('Y-m-d H:i:s', strtotime($store['last_sync_at']))) : null;
+?>
+<div class="card" id="store-sync" data-site="<?= (int)$site['id'] ?>">
+  <h2>Website sync</h2>
+  <form id="store-sync-form" data-js-form>
+    <div class="sync-row">
+      <input type="text" name="url" value="<?= e($store['url']) ?>" placeholder="https://example.com" aria-label="Website address" required>
+      <label class="checkbox"><input type="checkbox" name="pages" value="1" <?= $store['pages'] ? 'checked' : '' ?>> Pages</label>
+      <label class="checkbox"><input type="checkbox" name="posts" value="1" <?= $store['posts'] ? 'checked' : '' ?>> Posts</label>
+      <label class="checkbox"><input type="checkbox" name="products" value="1" <?= $store['products'] ? 'checked' : '' ?>> Products</label>
+      <button class="btn" type="submit" data-sync-button>Sync now</button>
+    </div>
+  </form>
+  <div class="sync-progress" hidden>
+    <div class="sync-bar"><span></span></div>
+    <div class="sync-label muted"></div>
+  </div>
+  <p class="sync-status muted">
+    <?php if ($lastSync): ?>
+      Last sync <?= e($lastSync) ?> ·
+      <?= number_format((int)$store['stats']['products']) ?> products ·
+      <?= number_format((int)$store['stats']['pages']) ?> pages ·
+      <?= number_format((int)$store['stats']['posts']) ?> posts
+    <?php else: ?>
+      Not synced yet.
+    <?php endif; ?>
+  </p>
+  <?php if (!empty($store['last_error'])): ?>
+    <p class="sync-error"><?= e($store['last_error']) ?></p>
+  <?php endif; ?>
+  <p class="hint cron-line">Auto-sync (cPanel cron): <span class="mono">php <?= e(APP_ROOT) ?>/bin/sync.php</span></p>
+</div>
+
+<div class="card" id="products-card" data-site="<?= (int)$site['id'] ?>">
+  <div class="card-head">
+    <h2>Products <span class="muted product-total"><?= number_format($productCount) ?></span></h2>
+    <input type="search" class="product-search" placeholder="Search name, SKU or brand" aria-label="Search products" <?= $productCount ? '' : 'hidden' ?>>
+  </div>
+  <div class="product-list">
+    <?php foreach ($products as $product): ?>
+      <div class="product-row">
+        <div class="product-name">
+          <?php if ($product['permalink']): ?>
+            <a href="<?= e($product['permalink']) ?>" target="_blank" rel="noopener"><?= e($product['name']) ?></a>
+          <?php else: ?>
+            <?= e($product['name']) ?>
+          <?php endif; ?>
+          <?php if ($product['sku']): ?><span class="mono muted"><?= e($product['sku']) ?></span><?php endif; ?>
+        </div>
+        <div class="product-price"><?= e(App\ProductSearch::price($product)) ?></div>
+        <span class="badge <?= $product['in_stock'] ? 'green' : 'grey' ?>"><?= e($product['stock_text'] ?: ($product['in_stock'] ? 'In stock' : 'Out of stock')) ?></span>
+      </div>
+    <?php endforeach; ?>
+  </div>
+  <p class="muted product-empty" <?= $productCount ? 'hidden' : '' ?>>No products yet.</p>
+
+  <form class="csv-import" method="post" action="<?= e(admin_url('knowledge')) ?>" enctype="multipart/form-data">
+    <?= Csrf::field() ?>
+    <input type="hidden" name="action" value="import_products_csv">
+    <input type="hidden" name="id" value="<?= (int)$site['id'] ?>">
+    <span class="muted">WooCommerce CSV</span>
+    <input type="file" name="file" accept=".csv" required>
+    <button class="btn secondary small" type="submit">Import CSV</button>
+  </form>
+</div>
+
 <div class="card faq-card" data-faq-site="<?= (int)$site['id'] ?>">
     <h2>FAQs</h2>
 
@@ -37,7 +104,7 @@ $statusBadges = [
     </div>
     <p class="muted faq-empty" <?= $faqs ? 'hidden' : '' ?>>No FAQs yet.</p>
 
-    <form class="faq-form" id="faq-form">
+    <form class="faq-form" id="faq-form" data-js-form>
       <input type="hidden" name="faq_id" value="">
       <div class="field">
         <label for="faq-question">Question</label>
@@ -163,7 +230,7 @@ $statusBadges = [
             <strong><?= e($document['title']) ?></strong><br>
             <span class="muted"><?= e(str_limit((string)$document['content'], 90)) ?></span>
           </td>
-          <td class="muted"><?= e($document['source_type']) ?></td>
+          <td class="muted"><?= e(['wp_page' => 'page', 'wp_post' => 'post'][$document['source_type']] ?? $document['source_type']) ?></td>
           <td>
             <span class="badge <?= e($badge) ?>"><?= e($label) ?></span>
             <?php if (!empty($document['error'])): ?>

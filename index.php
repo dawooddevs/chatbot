@@ -23,6 +23,7 @@ const ROUTES = [
     'site' => 'site',
     'knowledge' => 'knowledge',
     'faq' => 'faq',
+    'store' => 'store',
     'conversations' => 'conversations',
     'conversation' => 'conversation',
     'attachment' => 'attachment',

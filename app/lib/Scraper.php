@@ -12,10 +12,7 @@ final class Scraper
     {
         $url = trim($url);
         $parts = parse_url($url);
-        if (!$parts || !in_array(strtolower($parts['scheme'] ?? ''), ['http', 'https'], true) || empty($parts['host'])) {
-            throw new HttpException('Enter a full URL starting with http:// or https://');
-        }
-        self::assertPublicHost((string)$parts['host']);
+        self::assertPublicUrl($url);
 
         $response = Http::request('GET', $url, ['Accept' => 'text/html,text/plain;q=0.9'], null, 45);
         if ($response['status'] >= 400) {
@@ -28,9 +25,23 @@ final class Scraper
         ];
     }
 
+    /** Rejects anything but a public http(s) address. */
+    public static function assertPublicUrl(string $url): void
+    {
+        $parts = parse_url(trim($url));
+        if (!$parts || !in_array(strtolower($parts['scheme'] ?? ''), ['http', 'https'], true) || empty($parts['host'])) {
+            throw new HttpException('Enter a full URL starting with http:// or https://');
+        }
+        self::assertPublicHost((string)$parts['host']);
+    }
+
     /** Blocks loopback / private ranges so an imported URL cannot probe the host network. */
     private static function assertPublicHost(string $host): void
     {
+        // Local development only; never set this on a live server.
+        if (Config::get('allow_private_urls') === true) {
+            return;
+        }
         $ips = filter_var($host, FILTER_VALIDATE_IP) ? [$host] : (gethostbynamel($host) ?: []);
         if ($ips === []) {
             throw new HttpException('That domain could not be resolved.');

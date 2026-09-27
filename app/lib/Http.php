@@ -7,7 +7,7 @@ final class Http
 {
     /**
      * @param array<string,string> $headers
-     * @return array{status:int, body:string}
+     * @return array{status:int, body:string, headers:array<string,string>}
      */
     public static function request(string $method, string $url, array $headers = [], ?string $body = null, int $timeout = 60): array
     {
@@ -20,6 +20,7 @@ final class Http
     private static function curl(string $method, string $url, array $headers, ?string $body, int $timeout): array
     {
         $ch = curl_init($url);
+        $responseHeaders = [];
         $headerLines = [];
         foreach ($headers as $name => $value) {
             $headerLines[] = $name . ': ' . $value;
@@ -33,6 +34,13 @@ final class Http
             CURLOPT_MAXREDIRS => 3,
             CURLOPT_HTTPHEADER => $headerLines,
             CURLOPT_USERAGENT => 'ChatbotPlatform/1.0 (+PHP)',
+            CURLOPT_HEADERFUNCTION => static function ($handle, string $line) use (&$responseHeaders): int {
+                $parts = explode(':', $line, 2);
+                if (count($parts) === 2) {
+                    $responseHeaders[strtolower(trim($parts[0]))] = trim($parts[1]);
+                }
+                return strlen($line);
+            },
         ]);
         if ($body !== null) {
             curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
@@ -46,7 +54,7 @@ final class Http
         $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
         curl_close($ch);
 
-        return ['status' => $status, 'body' => (string)$response];
+        return ['status' => $status, 'body' => (string)$response, 'headers' => $responseHeaders];
     }
 
     private static function streams(string $method, string $url, array $headers, ?string $body, int $timeout): array
@@ -70,11 +78,17 @@ final class Http
             throw new HttpException('Request failed: outbound HTTP is blocked on this server.');
         }
         $status = 0;
+        $responseHeaders = [];
         foreach ($http_response_header ?? [] as $line) {
             if (preg_match('#^HTTP/\S+\s+(\d{3})#', $line, $m)) {
                 $status = (int)$m[1];
+                continue;
+            }
+            $parts = explode(':', $line, 2);
+            if (count($parts) === 2) {
+                $responseHeaders[strtolower(trim($parts[0]))] = trim($parts[1]);
             }
         }
-        return ['status' => $status, 'body' => $response];
+        return ['status' => $status, 'body' => $response, 'headers' => $responseHeaders];
     }
 }

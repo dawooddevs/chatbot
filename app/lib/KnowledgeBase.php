@@ -54,7 +54,13 @@ final class KnowledgeBase
             throw new \RuntimeException('Document not found.');
         }
 
-        $chunks = Chunker::split((string)$document['content']);
+        // Each chunk carries its document title: a page called "Refund Policy"
+        // often never says "refund" in its body, and the title is what matches.
+        $title = trim((string)$document['title']);
+        $chunks = array_map(
+            static fn (string $chunk): string => $title !== '' ? $title . "\n" . $chunk : $chunk,
+            Chunker::split((string)$document['content'])
+        );
         Database::run('DELETE FROM chunks WHERE document_id = ?', [$documentId]);
 
         if ($chunks === []) {

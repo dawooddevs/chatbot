@@ -11,7 +11,7 @@ use PDO;
 final class Schema
 {
     /** Bump whenever statements() changes, so deployed updates migrate themselves. */
-    public const VERSION = 3;
+    public const VERSION = 4;
 
     /**
      * Runs the migrations once per schema version. Called on admin requests so a
@@ -39,6 +39,28 @@ final class Schema
         foreach (self::columns() as [$table, $column, $definition]) {
             self::addColumn($pdo, $table, $column, $definition);
         }
+        self::addFulltext($pdo);
+    }
+
+    /**
+     * Full-text search over products. Older MySQL builds without InnoDB
+     * FULLTEXT still work; product search then falls back to LIKE matching.
+     */
+    private static function addFulltext(PDO $pdo): void
+    {
+        $stmt = $pdo->prepare(
+            "SELECT COUNT(*) FROM information_schema.STATISTICS
+              WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products' AND INDEX_NAME = 'ft_products'"
+        );
+        $stmt->execute();
+        if ((int)$stmt->fetchColumn() > 0) {
+            return;
+        }
+        try {
+            $pdo->exec('ALTER TABLE products ADD FULLTEXT INDEX ft_products (name, sku, search_text)');
+        } catch (\Throwable $e) {
+            error_log('[chatbot] full-text index unavailable: ' . $e->getMessage());
+        }
     }
 
     /** Columns added after the first release. @return array<int, array{0:string,1:string,2:string}> */
@@ -46,6 +68,8 @@ final class Schema
     {
         return [
             ['messages', 'attachment_id', 'INT UNSIGNED NULL AFTER content'],
+            ['sites', 'store', 'LONGTEXT NULL AFTER ai'],
+            ['documents', 'sync_token', 'VARCHAR(32) NULL'],
         ];
     }
 
@@ -153,6 +177,37 @@ final class Schema
                 PRIMARY KEY (id),
                 KEY idx_messages_conversation (conversation_id, id),
                 KEY idx_messages_site (site_id, created_at)
+            ) $engine",
+
+            "CREATE TABLE IF NOT EXISTS products (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                site_id INT UNSIGNED NOT NULL,
+                external_id BIGINT UNSIGNED NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                sku VARCHAR(100) NULL,
+                product_type VARCHAR(20) NULL,
+                price DECIMAL(14,2) NULL,
+                max_price DECIMAL(14,2) NULL,
+                regular_price DECIMAL(14,2) NULL,
+                on_sale TINYINT(1) NOT NULL DEFAULT 0,
+                currency_prefix VARCHAR(12) NULL,
+                currency_suffix VARCHAR(12) NULL,
+                in_stock TINYINT(1) NOT NULL DEFAULT 1,
+                stock_text VARCHAR(100) NULL,
+                brands VARCHAR(255) NULL,
+                categories TEXT NULL,
+                tags TEXT NULL,
+                attributes TEXT NULL,
+                summary TEXT NULL,
+                permalink VARCHAR(500) NULL,
+                image VARCHAR(500) NULL,
+                search_text MEDIUMTEXT NULL,
+                sync_token VARCHAR(32) NULL,
+                updated_at DATETIME NOT NULL,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_products_external (site_id, external_id),
+                KEY idx_products_price (site_id, price),
+                KEY idx_products_sku (site_id, sku)
             ) $engine",
 
             "CREATE TABLE IF NOT EXISTS faqs (

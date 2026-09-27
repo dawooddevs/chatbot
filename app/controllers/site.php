@@ -6,8 +6,10 @@ use App\Database;
 use App\Faq;
 use App\KnowledgeBase;
 use App\OpenAi;
+use App\ProductSearch;
 use App\Session;
 use App\Site;
+use App\StoreSync;
 use App\Uploads;
 use App\View;
 
@@ -145,6 +147,12 @@ $data = ['site' => $site, 'tab' => $tab];
 
 if ($tab === 'knowledge') {
     $data['faqs'] = Faq::forSite($siteId);
+    $data['store'] = StoreSync::settings($site);
+    if ($data['store']['url'] === '' && !empty($site['domains'][0])) {
+        $data['store']['url'] = 'https://' . ltrim($site['domains'][0], '*.');
+    }
+    $data['productCount'] = ProductSearch::count($siteId);
+    $data['products'] = $data['productCount'] > 0 ? ProductSearch::search($siteId, '', [], 25) : [];
     // The FAQ document is generated from the list above it, so it is not
     // offered for editing here.
     $data['documents'] = Database::all(
