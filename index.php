@@ -29,6 +29,7 @@ const ROUTES = [
     'attachment' => 'attachment',
     'settings' => 'settings',
     'profile' => 'profile',
+    'users' => 'users',
     'preview' => 'preview',
 ];
 

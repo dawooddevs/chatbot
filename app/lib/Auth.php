@@ -17,14 +17,13 @@ final class Auth
         }
 
         if (password_needs_rehash($hash, PASSWORD_DEFAULT)) {
-            Database::run('UPDATE users SET password_hash = ? WHERE id = ?', [
-                password_hash($password, PASSWORD_DEFAULT),
-                $user['id'],
-            ]);
+            $user['password_hash'] = password_hash($password, PASSWORD_DEFAULT);
+            Database::run('UPDATE users SET password_hash = ? WHERE id = ?', [$user['password_hash'], $user['id']]);
         }
 
         session_regenerate_id(true);
         Session::set('user_id', (int)$user['id']);
+        Session::set('auth_marker', self::marker($user));
         Database::run('UPDATE users SET last_login_at = NOW() WHERE id = ?', [$user['id']]);
         self::$user = $user;
         return true;
@@ -34,7 +33,17 @@ final class Auth
     {
         self::$user = null;
         Session::forget('user_id');
+        Session::forget('auth_marker');
         session_regenerate_id(true);
+    }
+
+    /**
+     * A fingerprint of the password hash kept in the session: when the
+     * password is changed or reset, every other session of that user ends.
+     */
+    private static function marker(array $user): string
+    {
+        return substr(hash('sha256', (string)$user['password_hash']), 0, 24);
     }
 
     public static function user(): ?array
@@ -46,7 +55,24 @@ final class Auth
         if (!$id) {
             return null;
         }
-        return self::$user = Database::first('SELECT * FROM users WHERE id = ? LIMIT 1', [(int)$id]);
+        $user = Database::first('SELECT * FROM users WHERE id = ? LIMIT 1', [(int)$id]);
+        $marker = Session::get('auth_marker');
+        if ($user && $marker === null) {
+            // Signed in before markers existed: adopt the current one.
+            Session::set('auth_marker', self::marker($user));
+        } elseif (!$user || !hash_equals((string)$marker, self::marker($user))) {
+            // Deleted, or the password changed since this session began.
+            Session::forget('user_id');
+            Session::forget('auth_marker');
+            return null;
+        }
+        return self::$user = $user;
+    }
+
+    /** The first account created; it cannot be deleted from the panel. */
+    public static function ownerId(): int
+    {
+        return (int)Database::value('SELECT MIN(id) FROM users');
     }
 
     public static function id(): int
@@ -78,11 +104,19 @@ final class Auth
         );
     }
 
-    public static function updatePassword(int $userId, string $password): void
+    public static function updatePassword(int $userId, string $password, bool $mustChange = false): void
     {
-        Database::run('UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?', [
-            password_hash($password, PASSWORD_DEFAULT),
+        $currentId = self::id(); // before the hash changes, or this session would look stale
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        Database::run('UPDATE users SET password_hash = ?, must_change_password = ? WHERE id = ?', [
+            $hash,
+            $mustChange ? 1 : 0,
             $userId,
         ]);
+        // Changing your own password keeps you signed in here; other sessions end.
+        if ($userId === $currentId) {
+            Session::set('auth_marker', self::marker(['password_hash' => $hash]));
+            self::$user = null;
+        }
     }
 }

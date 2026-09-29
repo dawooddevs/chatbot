@@ -61,15 +61,13 @@ final class Site
         return $key;
     }
 
-    public static function find(int $id, ?int $userId = null): ?array
+    /**
+     * Websites are shared by every admin user; sites.user_id only records who
+     * created one.
+     */
+    public static function find(int $id): ?array
     {
-        $sql = 'SELECT * FROM sites WHERE id = ?';
-        $params = [$id];
-        if ($userId !== null) {
-            $sql .= ' AND user_id = ?';
-            $params[] = $userId;
-        }
-        $site = Database::first($sql . ' LIMIT 1', $params);
+        $site = Database::first('SELECT * FROM sites WHERE id = ? LIMIT 1', [$id]);
         return $site ? self::hydrate($site) : null;
     }
 
@@ -80,9 +78,9 @@ final class Site
     }
 
     /** @return array<int, array> */
-    public static function forUser(int $userId): array
+    public static function all(): array
     {
-        $rows = Database::all('SELECT * FROM sites WHERE user_id = ? ORDER BY created_at DESC', [$userId]);
+        $rows = Database::all('SELECT * FROM sites ORDER BY created_at DESC');
         return array_map([self::class, 'hydrate'], $rows);
     }
 

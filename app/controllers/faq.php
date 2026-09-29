@@ -5,11 +5,10 @@
  */
 declare(strict_types=1);
 
-use App\Auth;
 use App\Faq;
 use App\Site;
 
-$site = Site::find((int)(post('site_id') ?? query('site_id') ?? 0), Auth::id());
+$site = Site::find((int)(post('site_id') ?? query('site_id') ?? 0));
 
 if (!$site) {
     json_out(['error' => 'That website was not found.'], 404);

@@ -1,17 +1,16 @@
 <?php
 declare(strict_types=1);
 
-use App\Auth;
 use App\Database;
 use App\Session;
 use App\Uploads;
 
 $attachment = Database::first(
-    'SELECT a.*, s.user_id FROM attachments a JOIN sites s ON s.id = a.site_id WHERE a.id = ? LIMIT 1',
+    'SELECT a.* FROM attachments a JOIN sites s ON s.id = a.site_id WHERE a.id = ? LIMIT 1',
     [(int)(query('id') ?? 0)]
 );
 
-if (!$attachment || (int)$attachment['user_id'] !== Auth::id()) {
+if (!$attachment) {
     Session::flash('error', 'That file was not found.');
     redirect(admin_url('conversations'));
 }

@@ -383,3 +383,17 @@ pre.code {
 .kb-pane.is-entering { animation: tab-in .22s ease both; }
 .doc-title { font-weight: 600; color: var(--text); text-decoration: none; }
 .doc-title:hover { color: var(--primary); }
+
+/* ---------- users ---------- */
+.reset-password { position: relative; display: inline-block; }
+.reset-password > summary { list-style: none; }
+.reset-password > summary::-webkit-details-marker { display: none; }
+.reset-password[open] > summary { background: #eef2ff; border-color: #c7d2fe; color: var(--primary); }
+.reset-form {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 20;
+  display: flex; gap: 8px; padding: 10px; width: 300px;
+  background: #fff; border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, .14);
+  animation: rise .18s cubic-bezier(.2, .7, .2, 1) both;
+}
+.reset-form input { flex: 1; padding: 8px 10px; }

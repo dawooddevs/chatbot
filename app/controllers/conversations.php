@@ -1,14 +1,12 @@
 <?php
 declare(strict_types=1);
 
-use App\Auth;
 use App\Database;
 use App\Session;
 use App\Site;
 use App\View;
 
-$userId = Auth::id();
-$sites = Site::forUser($userId);
+$sites = Site::all();
 $siteIds = array_column($sites, 'id');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && post('action') === 'delete' && $siteIds !== []) {

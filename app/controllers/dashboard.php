@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use App\Auth;
 use App\Release;
 use App\Database;
 use App\Settings;
@@ -13,8 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && post('action') === 'dismiss_release
     redirect(admin_url('dashboard'));
 }
 
-$userId = Auth::id();
-$sites = Site::forUser($userId);
+$sites = Site::all();
 $siteIds = array_column($sites, 'id');
 
 $stats = ['conversations' => 0, 'messages' => 0, 'documents' => 0, 'today' => 0];

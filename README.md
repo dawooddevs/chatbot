@@ -39,6 +39,9 @@ messages arrive as toasts, while addresses and the back button keep working.
   it fresh from cron.
 - **Conversations** — full transcripts of every visitor chat, filterable per website,
   including any files a visitor attached (served only to the signed-in owner).
+- **Users** — add admin users who manage everything you do: every website is
+  shared by the whole team. Reset passwords and remove users; either signs them
+  out at once. The first account is the owner and cannot be deleted.
 - **Settings** — OpenAI key (or `OPENAI_API_KEY` env var), API base URL, defaults,
   connection test, platform name.
 

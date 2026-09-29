@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use App\Auth;
 use App\Database;
 use App\Faq;
 use App\KnowledgeBase;
@@ -13,9 +12,8 @@ use App\StoreSync;
 use App\Uploads;
 use App\View;
 
-$userId = Auth::id();
 $siteId = (int)(query('id') ?? post('id') ?? 0);
-$site = Site::find($siteId, $userId);
+$site = Site::find($siteId);
 
 if (!$site) {
     Session::flash('error', 'That website was not found.');
@@ -29,13 +27,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'save_general') {
         Database::run(
-            'UPDATE sites SET name = ?, allowed_domains = ?, status = ?, updated_at = NOW() WHERE id = ? AND user_id = ?',
+            'UPDATE sites SET name = ?, allowed_domains = ?, status = ?, updated_at = NOW() WHERE id = ?',
             [
                 (string)post('name', $site['name']),
                 implode("\n", Site::domains((string)post('allowed_domains', ''))),
                 post('status') === 'paused' ? 'paused' : 'active',
                 $siteId,
-                $userId,
             ]
         );
         Session::flash('success', 'Website settings saved.');
@@ -89,10 +86,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             preg_split('/\r?\n/', (string)post('suggestions', '')) ?: []
         )));
 
-        Database::run('UPDATE sites SET design = ?, updated_at = NOW() WHERE id = ? AND user_id = ?', [
+        Database::run('UPDATE sites SET design = ?, updated_at = NOW() WHERE id = ?', [
             json_encode($design, JSON_UNESCAPED_UNICODE),
             $siteId,
-            $userId,
         ]);
         Session::flash('success', 'Design saved. Reload the client site to see it.');
         redirect(admin_url('site', ['id' => $siteId, 'tab' => 'design']));
@@ -115,10 +111,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $embeddingChanged = $ai['embedding_model'] !== $site['ai']['embedding_model'];
 
-        Database::run('UPDATE sites SET ai = ?, updated_at = NOW() WHERE id = ? AND user_id = ?', [
+        Database::run('UPDATE sites SET ai = ?, updated_at = NOW() WHERE id = ?', [
             json_encode($ai, JSON_UNESCAPED_UNICODE),
             $siteId,
-            $userId,
         ]);
         Session::flash(
             'success',
@@ -130,10 +125,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'regenerate_key') {
-        Database::run('UPDATE sites SET site_key = ?, updated_at = NOW() WHERE id = ? AND user_id = ?', [
+        Database::run('UPDATE sites SET site_key = ?, updated_at = NOW() WHERE id = ?', [
             Site::newKey(),
             $siteId,
-            $userId,
         ]);
         Session::flash('warning', 'A new key was generated. Replace the embed code on the client website.');
         redirect(admin_url('site', ['id' => $siteId, 'tab' => 'embed']));
@@ -141,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $tab = in_array($tab, ['general', 'design', 'ai', 'embed', 'knowledge'], true) ? $tab : 'general';
-$site = Site::find($siteId, $userId);
+$site = Site::find($siteId);
 
 $data = ['site' => $site, 'tab' => $tab];
 

@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use App\Auth;
 use App\Database;
 use App\KnowledgeBase;
 use App\ProductCsv;
@@ -9,9 +8,8 @@ use App\Scraper;
 use App\Session;
 use App\Site;
 
-$userId = Auth::id();
 $siteId = (int)(query('id') ?? post('id') ?? 0);
-$site = Site::find($siteId, $userId);
+$site = Site::find($siteId);
 
 if (!$site) {
     Session::flash('error', 'That website was not found.');

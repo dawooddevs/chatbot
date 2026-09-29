@@ -10,6 +10,7 @@ $nav = [
     'sites' => 'Websites',
     'conversations' => 'Conversations',
     'settings' => 'Settings',
+    'users' => 'Users',
     'profile' => 'My account',
 ];
 $titles = $nav + ['site' => 'Website', 'conversation' => 'Conversation'];

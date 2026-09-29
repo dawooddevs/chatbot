@@ -7,7 +7,7 @@ use App\Session;
 use App\Site;
 use App\View;
 
-$userId = Auth::id();
+$userId = Auth::id(); // recorded as the website's creator
 $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -39,20 +39,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'delete') {
         $siteId = (int)post('id');
-        $site = Site::find($siteId, $userId);
+        $site = Site::find($siteId);
         if ($site) {
             Database::run('DELETE FROM chunks WHERE site_id = ?', [$siteId]);
             Database::run('DELETE FROM documents WHERE site_id = ?', [$siteId]);
             Database::run('DELETE FROM messages WHERE site_id = ?', [$siteId]);
             Database::run('DELETE FROM conversations WHERE site_id = ?', [$siteId]);
-            Database::run('DELETE FROM sites WHERE id = ? AND user_id = ?', [$siteId, $userId]);
+            Database::run('DELETE FROM sites WHERE id = ?', [$siteId]);
             Session::flash('success', 'Website and all of its data were deleted.');
         }
         redirect(admin_url('sites'));
     }
 }
 
-$sites = Site::forUser($userId);
+$sites = Site::all();
 $counts = [];
 foreach ($sites as $site) {
     $counts[$site['id']] = [
